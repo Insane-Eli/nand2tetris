@@ -1,23 +1,29 @@
 import java.io.*;
 
+/* ok so basically when we were assembling the chapter before, we were making something that could translate ONE file to hack
+ * now, we gotta be able to convert a WHOLE ASS FOLDER, which means unlike assembler.java, we gotta do ALL THIS bullshit
+ * 
+/*this guy stinks! :< */
+
 public class VMTranslator {
-	static FileWriter fileWriter;
-	static int debugLevel = 10;
+	static FileWriter fileWriter; // we writing multiple files ofc
+	static int debugLevel = 10; // tf is this thang haha?
 
 	public static void main(String args[]) {
 		// Get input file or directory name
-		String inFileName = args[0];
-		File inputFile = new File(inFileName);
+		String inFileName = args[0]; // grab the name of the file or folder we're translating
+		File inputFile = new File(inFileName); // get that jawn in a "file" format so we can do stuff with it
 
 		if (inputFile.isDirectory()) {
-			// Handle directory input
+			// Handle directory input (folders)
 			traverseDirectory(inputFile);
 		} else {
-			// Handle single file input
+			// Handle single file input (.vm)
 			translateFile(inputFile);
 		}
 	}
 
+	//extrrract all ze files from the folder
 	private static void traverseDirectory(File directory) {
 		File[] files = directory.listFiles();
 		if (files != null) {
@@ -33,6 +39,7 @@ public class VMTranslator {
 		}
 	}
 
+	//look at the files
 	private static void translateFile(File vmFile) {
 		String inFileName = vmFile.getAbsolutePath();
 		String outFileName = inFileName.replace(".vm", ".asm");

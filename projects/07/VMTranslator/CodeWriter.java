@@ -2,7 +2,7 @@ import java.io.*;
 
 public class CodeWriter
 {
-	File outFile;
+	File outFile; //
 	FileWriter printWriter;
 	String filename;
 	int qwer = 1;
@@ -15,6 +15,10 @@ public class CodeWriter
 	/* The constructor opens an output file/stream and gets ready to 
 		write into it. The argument will identify the output file / stream.
 		This can be done by sending in a stream */
+
+	/* aight so basically assembly to vm language is kinda like just figuring out how to make functions
+	 * anyways 
+	 */
 		
 	public CodeWriter(FileWriter FW)
 	{

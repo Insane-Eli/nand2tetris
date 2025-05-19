@@ -11,3 +11,8 @@ public class Assembler {
     Parser parser = new Parser(inFileName, outFileName);
     }
 }
+
+//STEPS:
+//get the file name
+//rename it accordingly
+//send it to the parser :D
