@@ -28,6 +28,7 @@ public class Parser
 					
 					// Remove any leading whitespace from the current line
 					currentLine=currentLine.trim();
+					
 					return true;
 				}
 			}

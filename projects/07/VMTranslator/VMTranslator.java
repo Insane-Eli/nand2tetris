@@ -49,6 +49,7 @@ public class VMTranslator {
 
 			// Loop while the Parser object has more commands
 			while (parser.hasMoreCommands()) {
+
 				parser.advance();
 
 				switch (parser.commandType()) {

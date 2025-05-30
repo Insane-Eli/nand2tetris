@@ -21,18 +21,24 @@ public class CodeWriter
 		printWriter = FW;
 	}
 	
-	
+
 	public void setFileName(String inFileName) 
 	{
 		filename = inFileName;			
-		staticname = filename.replace("vm", "").substring((filename.lastIndexOf("/")+1), (filename.indexOf(".")+1));
+
+		// staticname = filename.replace("vm", "").substring((filename.lastIndexOf("/")+1), (filename.indexOf(".")+1));
+
+		// only needed fix #2
+		staticname = new File(inFileName).getName().replace(".vm", ""); // got this fix courtesy of chatGPT but i think it's right
+
+
 	}
 	
 	public void w(String cmd){
 		try{
 		printWriter.write(cmd+"\n");
 		}catch(Exception e){
-		
+			
 		}
 	}
 		
@@ -42,6 +48,7 @@ public class CodeWriter
 		try{
 			switch(command){
 				case "add": 
+								w("// add");
 								w("@SP");
 								w("AM=M-1");
 								w("D=M");
@@ -49,6 +56,7 @@ public class CodeWriter
 								w("M=M+D");
 								break;		
 				case "sub": 
+								w("// sub");
 								w("@SP");
 								w("AM=M-1");
 								w("D=M");
@@ -56,11 +64,13 @@ public class CodeWriter
 								w("M=M-D");
 								break;	
 				case "neg": 
+								w("// neg");
 								w("@SP");
 								w("A=M-1");
 								w("M=-M");
 								break;
 				case "eq": 
+								w("// eq");
 								w("@SP");
 								w("AM=M-1");
 								w("D=M");
@@ -76,6 +86,7 @@ public class CodeWriter
 								qwer++;
 								break;
 				case "gt":
+								w("// gt");
 								w("@SP");
 								w("AM=M-1");
 								w("D=M");
@@ -91,6 +102,7 @@ public class CodeWriter
 								qwer++;
 								break;
 				case "lt": 
+								w("// lt");
 								w("@SP");
 								w("AM=M-1");
 								w("D=M");
@@ -106,6 +118,7 @@ public class CodeWriter
 								qwer++;
 								break;
 				case "and": 
+								w("// and");
 								w("@SP");
 								w("AM=M-1");
 								w("D=M");
@@ -113,6 +126,7 @@ public class CodeWriter
 								w("M=D&M");
 								break;		
 				case "or": 
+								w("// or");
 								w("@SP");
 								w("AM=M-1");
 								w("D=M");
@@ -120,6 +134,7 @@ public class CodeWriter
 								w("M=D|M");
 								break;
 				case "not": 
+								w("// not");
 								w("@SP");
 								w("A=M-1");//go to top of stack
 								w("M=!M");//make it not itself
@@ -212,7 +227,7 @@ public class CodeWriter
 	public void writePushPop(String command, String segment, int index)
 	{				
 		try{
-		//w("//"+command+" "+segment+" "+index);
+		w("// "+command+" "+segment+" "+index);
 		if(command.equals("push")){
 				switch(segment){
 					case "argument": //WORKS
@@ -228,7 +243,7 @@ public class CodeWriter
 										push("THAT", index);
 										break;
 					case "static":		
-										push("@"+staticname+index);
+										push("@" + staticname + "." + index);
 										break;
 					case "constant": //WORKS
 										w("@"+index);
@@ -250,6 +265,7 @@ public class CodeWriter
 													w("pointer error");
 													break;
 									};
+									break;
 					case "temp": //WORKS
 										w("@R" + (index+5));
 										w("D=M");
@@ -276,7 +292,7 @@ public class CodeWriter
 										pop("THAT", index);
 										break;
 					case "static"://probably fix this and everything else under here
-										pop("@"+staticname+index);
+										pop("@" + staticname + "." + index);
 										break;
 					case "pointer"://WORKS
 									switch(index){
@@ -290,6 +306,7 @@ public class CodeWriter
 													w("pointer error");
 													break;
 										};
+									break; // only needed fix #2
 													
 					case "temp": //WORKS
 													pop("@R"+(index+5));
@@ -311,6 +328,7 @@ public class CodeWriter
 	}
 	
     public void writerInit() {
+		w("// writerInit");
         w("@256");
         w("D=A");
         w("@SP");
@@ -318,15 +336,18 @@ public class CodeWriter
 	}
 		
 	public void writeLabel(String label) {
+		w("// writeLabel " + label);
 		w("(" + label + ")");
 	}
 	
 	public void writeGoto(String label) {
+		w("// writeGoto " + label);
 		w("@" + label);
 		w("0:JMP");
 	}
 	
 	public void writeIf(String label) {
+		w("// writeIf " + label);
 		w("@SP");
 		w("AM=M-1");
 		w("D=M");
