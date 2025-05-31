@@ -25,6 +25,7 @@
  *
  * @author Christian Lorenz
  */
+
 public class Debug {
 
     public static boolean debugMessages = true;

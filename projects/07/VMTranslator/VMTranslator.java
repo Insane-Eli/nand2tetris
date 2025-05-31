@@ -4,7 +4,7 @@ import java.io.*;
 public class VMTranslator {
 
     static FileWriter fileWriter;
-    static int debugLevel = 10;
+    static int debugLevel = 10; // not sure if we need this but probably don't touch it
 
     public static void main(String args[]) {
         // Get input file or directory name
@@ -52,72 +52,38 @@ public class VMTranslator {
             // Loop while the Parser object has more commands
             while (parser.hasMoreCommands()) {
 
+                // advance through the command
                 parser.advance();
 
+                // and do something with the codeWriter depending on what it is
                 switch (parser.commandType()) {
-                    case 0:
-                        codeWriter.writePushPop("push", parser.arg1(), parser.arg2());
-                        break;
-                    case 1:
-                        codeWriter.writePushPop("pop", parser.arg1(), parser.arg2());
-                        break;
-                    case 2:
-                        codeWriter.writeArithmetic("add");
-                        break;
-                    case 3:
-                        codeWriter.writeArithmetic("sub");
-                        break;
-                    case 4:
-                        codeWriter.writeArithmetic("neg");
-                        break;
-                    case 5:
-                        codeWriter.writeArithmetic("eq");
-                        break;
-                    case 6:
-                        codeWriter.writeArithmetic("gt");
-                        break;
-                    case 7:
-                        codeWriter.writeArithmetic("lt");
-                        break;
-                    case 8:
-                        codeWriter.writeArithmetic("and");
-                        break;
-                    case 9:
-                        codeWriter.writeArithmetic("or");
-                        break;
-                    case 10:
-                        codeWriter.writeArithmetic("not");
-                        break;
-                    case 11:
-                        codeWriter.writeLabel(parser.arg1());
-                        break;
-                    case 12:
-                        codeWriter.writeGoto(parser.arg1());
-                        break;
-                    case 13:
-                        codeWriter.writeIf(parser.arg1());
-                        break;
 
-					// Chapter 8
-					// case 14:
-						// codeWriter.writeCall("call", 5);
-						// break;
-					// case 15:
-						// codeWriter.writeReturn();
-						// break;
-					// case 16:
-						// codeWriter.writeFunction("function", 5);
-						// break;
+                    case 0 -> codeWriter.writePushPop("push", parser.arg1(), parser.arg2());
+                    case 1 -> codeWriter.writePushPop("pop", parser.arg1(), parser.arg2());
+                    case 2 -> codeWriter.writeArithmetic("add");
+                    case 3 -> codeWriter.writeArithmetic("sub");
+                    case 4 -> codeWriter.writeArithmetic("neg");
+                    case 5 -> codeWriter.writeArithmetic("eq");
+                    case 6 -> codeWriter.writeArithmetic("gt");
+                    case 7 -> codeWriter.writeArithmetic("lt");
+                    case 8 -> codeWriter.writeArithmetic("and");
+                    case 9 -> codeWriter.writeArithmetic("or");
+                    case 10 -> codeWriter.writeArithmetic("not");
+                    case 11 -> codeWriter.writeLabel(parser.arg1());
+                    case 12 -> codeWriter.writeGoto(parser.arg1());
+                    case 13 -> codeWriter.writeIf(parser.arg1());
 						
-                    default:
-                        System.out.print("?");
-						break;
+                    // case 14 -> codeWriter.writeCall("call", 5);
+                    // case 15 -> codeWriter.writeReturn();
+                    // case 16 -> codeWriter.writeFunction("function", 5);
+
+                    default -> System.out.print("?");
                 }
             }
 
             codeWriter.close();
         } catch (IOException e) {
-            e.printStackTrace();
+            System.out.println("IOException: translateFile()");
         }
     }
 }
