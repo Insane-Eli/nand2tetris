@@ -3,10 +3,11 @@ import java.io.*;
 
 public class CodeWriter {
 
-    FileWriter printWriter;;
+    FileWriter printWriter;
     String fileName;
     String staticName;
-    int uniqueLabelTag = 1;
+    int comparisonLabelTag = 1;
+    int functionLabelTag = 0;
 
     /* The project for chapter 7 only deals with arithmetic command and push/pop.
 		functions, call, return, label will be dealt with in chapter 8.	*/
@@ -72,13 +73,13 @@ public class CodeWriter {
                     w("A=A-1"); // Go down one (to what is now the top of the stack)
                     w("D=M-D"); // Subtract the two (element below - element above) and store it
                     w("M=-1"); // Set the top of the stack to -1 (all 1s) for now, and we'll change it if the comparison comes out false
-                    w("@eq" + uniqueLabelTag); // Prepare to jump ahead
+                    w("@eq" + comparisonLabelTag); // Prepare to jump ahead
                     w("D;JEQ"); // Jump ahead if the comparison comes out as true, else...
                     w("@SP"); // Go to the stack pointer
                     w("A=M-1"); // Go to whatever's at the top of the stack
                     w("M=0"); // Set the top of the stack to false (all 0s)
-                    w("(eq" + uniqueLabelTag + ")"); // If the comparison comes out as true, we'll have jumped here to avoid setting the top of the stack to false
-                    uniqueLabelTag++; // Lastly, incriment uniqueLabelTag so that the next run through will have a new tag
+                    w("(eq" + comparisonLabelTag + ")"); // If the comparison comes out as true, we'll have jumped here to avoid setting the top of the stack to false
+                    comparisonLabelTag++; // Lastly, incriment comparisonLabelTag so that the next run through will have a new tag
                 }
 
                 case "gt" -> {
@@ -89,13 +90,13 @@ public class CodeWriter {
                     w("A=A-1"); // Go down one (to what is now the top of the stack)
                     w("D=M-D"); // Subtract the two (element below - element above) and store it
                     w("M=-1"); // Set the top of the stack to -1 (all 1s) for now, and we'll change it if the comparison comes out false
-                    w("@gt" + uniqueLabelTag); // Prepare to jump ahead
+                    w("@gt" + comparisonLabelTag); // Prepare to jump ahead
                     w("D;JGT"); // Jump ahead if the comparison comes out as true, else...
                     w("@SP"); // Go to the stack pointer
                     w("A=M-1"); // Go to whatever's at the top of the stack
                     w("M=0"); // Set the top of the stack to false (all 0s)
-                    w("(gt" + uniqueLabelTag + ")"); // If the comparison comes out as true, we'll have jumped here to avoid setting the top of the stack to false
-                    uniqueLabelTag++; // Lastly, incriment uniqueLabelTag so that the next run through will have a new tag
+                    w("(gt" + comparisonLabelTag + ")"); // If the comparison comes out as true, we'll have jumped here to avoid setting the top of the stack to false
+                    comparisonLabelTag++; // Lastly, incriment comparisonLabelTag so that the next run through will have a new tag
                 }
 
                 case "lt" -> {
@@ -106,13 +107,13 @@ public class CodeWriter {
                     w("A=A-1"); // Go down one (to what is now the top of the stack)
                     w("D=M-D"); // Subtract the two (element below - element above) and store it
                     w("M=-1"); // Set the top of the stack to -1 (all 1s) for now, and we'll change it if the comparison comes out false
-                    w("@lt" + uniqueLabelTag); // Prepare to jump ahead
+                    w("@lt" + comparisonLabelTag); // Prepare to jump ahead
                     w("D;JLT"); // Jump ahead if the comparison comes out as true, else...
                     w("@SP"); // Go to the stack pointer
                     w("A=M-1"); // Go to whatever's at the top of the stack
                     w("M=0"); // Set the top of the stack to false (all 0s)
-                    w("(lt" + uniqueLabelTag + ")"); // If the comparison comes out as true, we'll have jumped here to avoid setting the top of the stack to false
-                    uniqueLabelTag++; // Lastly, incriment uniqueLabelTag so that the next run through will have a new tag
+                    w("(lt" + comparisonLabelTag + ")"); // If the comparison comes out as true, we'll have jumped here to avoid setting the top of the stack to false
+                    comparisonLabelTag++; // Lastly, incriment comparisonLabelTag so that the next run through will have a new tag
                 }
 
                 case "and" -> {
@@ -150,80 +151,6 @@ public class CodeWriter {
         // This function should present a series of checks to determine which
         // kind of command we are dealing with. Based on the command, the proper
         // series of Hack assembly commands must be output to the file.
-    }
-
-    /* The book indicates command as either C_PUSH or C_POP. This would suggest the
-		use of a Java ENUM. To make sure the prep documents are compilable, String
-		was used instead of an ENUM. The coders should feel free to replace the
-		parameter type as fits their implementation. */
-
-    // This push() pushes whatever's inside the spot (index) spaces above (@segment)
-    public void push(String segment, int index) {
-        try {
-            w("@" + index); // Go to the address of the index
-            w("D=A"); // Store the address (index) in D
-            w("@" + segment); // Go to the address of the segment
-            w("A=D+M"); // Go to the address of the segment + the index
-            w("D=M"); // D now stores the memory of the segment + index
-            w("@SP"); // Go to the stack pointer
-            w("M=M+1"); // Move the stack pointer up
-            w("A=M-1"); // Go to where the stack pointer previously was (above the top of the stack)
-            w("M=D"); // Make the new top of the stack whatever was in D
-        } catch (Exception e) {
-			System.out.println("Exception: CodeWriter.push(segment, index)");
-        }
-    }
-
-    // This push() pushes whatever's inside (address)
-    public void push(String address) {
-        try {
-            w(address); // Go to the address of the address
-            w("D=M"); // D now stores the memory of the address
-            w("@SP"); // Go to the stack pointer
-            w("M=M+1"); // Move the stack pointer up
-            w("A=M-1"); // Go to where the stack pointer previously was (above the top of the stack)
-            w("M=D"); // Make the new top of the stack whatever was in D
-        } catch (Exception e) {
-			System.out.println("Exception: CodeWriter.push(address)");
-        }
-    }
-
-    // This pop() pops whatever's at the top of the stack to the spot (index) spaces above (@segment)
-    public void pop(String segment, int index) {
-        try {
-            w("@SP"); // Go to the stack pointer
-            w("AM=M-1"); // Go to the top of the stack + move the stack pointer down in advance
-            w("D=M"); // Store whatever used to be at the top of the stack
-            w("@R13"); // Go to R13 (temp storage)
-            w("M=D"); // Put whatever used to be at the top of the stack into R13
-            w("@" + index); // Go to the address of the index
-            w("D=A"); // Store the address (index) in D
-            w("@" + segment); // Go to the address of the segment
-            w("A=D+M"); // Go to the address of the segment + the index
-            w("D=A"); // now D is the right address (index + segment)
-            w("@R14"); // Go to R14 (temp storage)
-            w("M=D"); // R14 has the (right address)
-            w("@R13"); // Go back to R13 (storing the value from the top of the stack)
-            w("D=M"); // D has whatever used to be at the top of the stack
-            w("@R14"); // Go back to R14 (storing the right address)
-            w("A=M"); // Go to the right address
-            w("M=D"); // The right value is now in the memory of the right address
-        } catch (Exception e) {
-			System.out.println("Exception: CodeWriter.pop(segment, index)");
-        }
-    }
-
-    // This pop() pops whatever's at the top of the stack to the spot (address)
-    public void pop(String address) {
-        try {
-            w("@SP"); // Go to the stack pointer
-            w("AM=M-1"); // Go to the top of the stack + move the stack pointer down in advance
-            w("D=M"); // Store whatever used to be at the top of the stack
-            w(address); // Go to the address of the address
-            w("M=D"); // The value is now in the memory of (address)
-        } catch (Exception e) {
-			System.out.println("Exception: CodeWriter.pop(address)");
-        }
     }
 
 
@@ -316,6 +243,81 @@ public class CodeWriter {
 			System.out.println("Exception: CodeWriter.writePushPop()");
         }
     }
+
+    /* The book indicates command as either C_PUSH or C_POP. This would suggest the
+		use of a Java ENUM. To make sure the prep documents are compilable, String
+		was used instead of an ENUM. The coders should feel free to replace the
+		parameter type as fits their implementation. */
+
+    // This push() pushes whatever's inside the spot (index) spaces above (@segment)
+    public void push(String segment, int index) {
+        try {
+            w("@" + index); // Go to the address of the index
+            w("D=A"); // Store the address (index) in D
+            w("@" + segment); // Go to the address of the segment
+            w("A=D+M"); // Go to the address of the segment + the index
+            w("D=M"); // D now stores the memory of the segment + index
+            w("@SP"); // Go to the stack pointer
+            w("M=M+1"); // Move the stack pointer up
+            w("A=M-1"); // Go to where the stack pointer previously was (above the top of the stack)
+            w("M=D"); // Make the new top of the stack whatever was in D
+        } catch (Exception e) {
+			System.out.println("Exception: CodeWriter.push(segment, index)");
+        }
+    }
+
+    // This push() pushes whatever's inside (address)
+    public void push(String address) {
+        try {
+            w(address); // Go to the address of the address
+            w("D=M"); // D now stores the memory of the address
+            w("@SP"); // Go to the stack pointer
+            w("M=M+1"); // Move the stack pointer up
+            w("A=M-1"); // Go to where the stack pointer previously was (above the top of the stack)
+            w("M=D"); // Make the new top of the stack whatever was in D
+        } catch (Exception e) {
+			System.out.println("Exception: CodeWriter.push(address)");
+        }
+    }
+
+    // This pop() pops whatever's at the top of the stack to the spot (index) spaces above (@segment)
+    public void pop(String segment, int index) {
+        try {
+            w("@SP"); // Go to the stack pointer
+            w("AM=M-1"); // Go to the top of the stack + move the stack pointer down in advance
+            w("D=M"); // Store whatever used to be at the top of the stack
+            w("@R13"); // Go to R13 (temp storage)
+            w("M=D"); // Put whatever used to be at the top of the stack into R13
+            w("@" + index); // Go to the address of the index
+            w("D=A"); // Store the address (index) in D
+            w("@" + segment); // Go to the address of the segment
+            w("A=D+M"); // Go to the address of the segment + the index
+            w("D=A"); // now D is the right address (index + segment)
+            w("@R14"); // Go to R14 (temp storage)
+            w("M=D"); // R14 has the (right address)
+            w("@R13"); // Go back to R13 (storing the value from the top of the stack)
+            w("D=M"); // D has whatever used to be at the top of the stack
+            w("@R14"); // Go back to R14 (storing the right address)
+            w("A=M"); // Go to the right address
+            w("M=D"); // The right value is now in the memory of the right address
+        } catch (Exception e) {
+			System.out.println("Exception: CodeWriter.pop(segment, index)");
+        }
+    }
+
+    // This pop() pops whatever's at the top of the stack to the spot (address)
+    public void pop(String address) {
+        try {
+            w("@SP"); // Go to the stack pointer
+            w("AM=M-1"); // Go to the top of the stack + move the stack pointer down in advance
+            w("D=M"); // Store whatever used to be at the top of the stack
+            w(address); // Go to the address of the address
+            w("M=D"); // The value is now in the memory of (address)
+        } catch (Exception e) {
+			System.out.println("Exception: CodeWriter.pop(address)");
+        }
+    }
+
     
     // Set the value of @SP to 256
     private void writerInit() {
@@ -328,13 +330,13 @@ public class CodeWriter {
 
     public void writeLabel(String label) {
         w("// writeLabel " + label);
-        w("(" + label + ")");
+        w("(" + staticName + "$" + label + ")");
     }
 
     public void writeGoto(String label) {
         w("// writeGoto " + label);
-        w("@" + label);
-        w("0:JMP");
+        w("@" + staticName + "$" + label);
+        w("0;JMP");
     }
 
     public void writeIf(String label) {
@@ -342,20 +344,63 @@ public class CodeWriter {
         w("@SP");
         w("AM=M-1");
         w("D=M");
-        w("@" + label);
+        w("@" + staticName + "$" + label);
         w("D;JNE");
     }
 
 	public void writeCall(String functionName, int numArgs) {
-		w("call " + functionName + " " + numArgs);
+
+        w("// call " + functionName + " " + numArgs);
+
+        // First and foremost lets give our function a unique name
+        functionLabelTag++;
+        String returnLabel = functionName + "$ret." + functionLabelTag;
+
+        // Next we gotta save the return address so we know where to put stuff once the function finishes
+        // Since we're saving the address and not the memory inside of the address, we can't use our push function, so we have to do it manually
+        w("@" + returnLabel); // Go to the address of the address
+        w("D=A"); // D now stores the address (this is the line we had to change from push())
+        w("@SP"); // Go to the stack pointer
+        w("M=M+1"); // Move the stack pointer up
+        w("A=M-1"); // Go to where the stack pointer previously was (above the top of the stack)
+        w("M=D"); // Make the new top of the stack whatever was in D
+
+        // And we gotta save wherever the segment pointers were so we can put them back once the function finishes
+        push("@LCL"); // LCL
+        push("@ARG"); // ARG
+        push("@THIS"); // THIS
+        push("@THAT"); // THAT
+
+        // Since we have 5 things that are now on the stack, we have to store wherever the stack pointer ORIGINALLY was inside of ARG
+        w("@SP"); // Go to the stack pointer
+        w("D=M"); // D now stores the stack pointer
+        w("@" + (numArgs + 5)); // Number of arguments + the 5 things we saved
+        w("D=D-A"); // Now D stores where the stack pointer ORIGINALLY was before we threw all of the segments and arguments on it
+        w("@ARG"); // Go to ARG
+        w("M=D"); // ARG now stores the OG stack pointer
+
+        // And the address of whatever the stack pointer is NOW goes inside LCL
+        w("@SP"); // Go to the stack pointer
+        w("D=M"); // D now stores the stack pointer
+        w("@LCL"); // Go to LCL
+        w("M=D"); // LCL now stores the NEW stack pointer
+
+        // Last but not least, we have to jump to the start of the function using our GOTO function
+        w("@" + functionName); // Go to our functions address
+        w("0;JMP"); // And jump to that label
+
+        // And make a return label so we know where to come back once the function finishes
+        w("(" + returnLabel + ")");
 	}
 	
 	public void writeReturn() {
-		w("return");
+		w("// return");
+
+        
 	}
 	
 	public void writeFunction(String functionName, int numLocals) {
-		w("function " + functionName + " " + numLocals);
+		w("// function " + functionName + " " + numLocals);
 	}
 
     // Close the printWriter

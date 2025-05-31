@@ -83,9 +83,6 @@ public class Parser {
             case "and" -> 8;
             case "or" -> 9;
             case "not" -> 10;
-            case "label" -> 11;
-            case "goto" -> 12;
-            case "if-goto" -> 13;
 
             default -> -1;
         };

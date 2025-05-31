@@ -326,26 +326,6 @@ public class CodeWriter {
         w("M=D");
     }
 
-    public void writeLabel(String label) {
-        w("// writeLabel " + label);
-        w("(" + label + ")");
-    }
-
-    public void writeGoto(String label) {
-        w("// writeGoto " + label);
-        w("@" + label);
-        w("0:JMP");
-    }
-
-    public void writeIf(String label) {
-        w("// writeIf " + label);
-        w("@SP");
-        w("AM=M-1");
-        w("D=M");
-        w("@" + label);
-        w("D;JNE");
-    }
-
     // Close the printWriter
     public void close() {
         try {
