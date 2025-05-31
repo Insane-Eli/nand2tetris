@@ -346,18 +346,6 @@ public class CodeWriter {
         w("D;JNE");
     }
 
-//	public void writeCall(String functionName, int numArgs) {
-//		w("call " + functionName + " " + numArgs);
-//	}
-//	
-//	public void writeReturn() {
-//		w("return");
-//	}
-//	
-//	public void writeFunction(String functionName, int numLocals) {
-//		w("function " + functionName + " " + numLocals);
-//	}
-
     // Close the printWriter
     public void close() {
         try {

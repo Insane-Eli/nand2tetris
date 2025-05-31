@@ -88,11 +88,6 @@ public class Parser {
             case "goto" -> 12;
             case "if-goto" -> 13;
 
-			// Chapter 8
-            // case "call" -> 14;
-            // case "return" -> 15;
-            // case "function" -> 16;
-
             default -> -1;
         };
     }
