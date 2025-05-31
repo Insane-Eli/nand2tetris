@@ -2,14 +2,15 @@
 import java.io.*;
 
 public class Parser {
-    // Create a String for analyzing the current line in the input file
 
+    // Create a String for analyzing the current line in the input file
     String currentLine;
     BufferedReader BR;
     String currentCommand;
     String[] stringArr;
     String arg1;
     int arg2;
+
 
     /* The constructor opens an input file/stream and gets ready to 
 		parse it. The argument will identify the output file / stream.
@@ -34,9 +35,8 @@ public class Parser {
                 }
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            System.out.println("IOException: hasMoreCommands()");
         }
-
         return false;
     }
 
@@ -56,14 +56,16 @@ public class Parser {
         if (stringArr.length > 1) {
             arg1 = stringArr[1];
             try {
-                arg2 = Integer.valueOf(stringArr[2]);
-            } catch (Exception e) {
-				e.printStackTrace();
+                arg2 = Integer.parseInt(stringArr[2]);
+            } catch (NumberFormatException e) {
+                System.out.println("NumberFormatException: advance()");
             }
         } else {
             arg1 = stringArr[0];
         }
+
     }
+
 
     /* The book indicates command as C_ARITHMETIC, C_PUSH, C_POP, etc. This would suggest the
 		use of a Java ENUM. To make sure the prep documents are compilable, String
@@ -100,7 +102,6 @@ public class Parser {
     }
 
     public int arg2() {
-
         return arg2;
     }
 }
