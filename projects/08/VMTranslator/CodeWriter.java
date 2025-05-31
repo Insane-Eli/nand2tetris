@@ -393,10 +393,86 @@ public class CodeWriter {
         w("(" + returnLabel + ")");
 	}
 	
+
+
 	public void writeReturn() {
 		w("// return");
 
-        
+        // Side note: I'm gonna stop commenting each and every little thing, it's pretty easy to see what's happening, and doing it every line is too much work :(
+
+        // OK, so first, let's get some things straight.
+        // With the way our writeCall() works, our function took up a chunk of the stack to free up some space for the pointers
+        // When we return, it's our job to restore everything to how it was pre-call
+
+        // First lets throw LCL (which stores the NEW stack pointer after throwing all of our segments on the stack) into temp storage (R13)
+        w("@LCL");
+        w("D=M");
+        w("@R13");
+        w("M=D");
+
+        // Next let's throw the OG stack pointer (NEW stack pointer - the 5 things we threw on the stack) into temp storage (R14)
+        w("@5");
+        w("A=D-A");
+        w("D=M");
+        w("@R14");
+        w("M=D");
+
+        // pop the function's return value and put it in @ARG (where the caller expects it to be)
+        w("@SP");
+        w("AM=M-1");
+        w("D=M");
+        w("@ARG");
+        w("A=M"); // extra line from pop()
+        w("M=D");
+
+        /*          
+
+            w("@SP"); // Go to the stack pointer
+            w("AM=M-1"); // Go to the top of the stack + move the stack pointer down in advance
+            w("D=M"); // Store whatever used to be at the top of the stack
+            w(address); // Go to the address of the address
+            w("M=D"); // The value is now in the memory of (address)
+
+        */
+
+        // SP = ARG + 1
+        w("@ARG");
+        w("D=M+1");
+        w("@SP");
+        w("M=D");
+
+        // THAT = *(FRAME - 1)
+        w("@R13");
+        w("AM=M-1");
+        w("D=M");
+        w("@THAT");
+        w("M=D");
+
+        // THIS = *(FRAME - 2)
+        w("@R13");
+        w("AM=M-1");
+        w("D=M");
+        w("@THIS");
+        w("M=D");
+
+        // ARG = *(FRAME - 3)
+        w("@R13");
+        w("AM=M-1");
+        w("D=M");
+        w("@ARG");
+        w("M=D");
+
+        // LCL = *(FRAME - 4)
+        w("@R13");
+        w("AM=M-1");
+        w("D=M");
+        w("@LCL");
+        w("M=D");
+
+        // goto RET
+        w("@R14");
+        w("A=M");
+        w("0;JMP");
 	}
 	
 	public void writeFunction(String functionName, int numLocals) {
