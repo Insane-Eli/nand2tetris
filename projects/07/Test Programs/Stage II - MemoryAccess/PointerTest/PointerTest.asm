@@ -1,3 +1,8 @@
+// writerInit
+@256
+D=A
+@SP
+M=D
 // push constant 3030
 @3030
 D=A
@@ -40,7 +45,7 @@ M=D
 @2
 D=A
 @THIS
-A=M+D
+A=D+M
 D=A
 @R14
 M=D
@@ -65,7 +70,7 @@ M=D
 @6
 D=A
 @THAT
-A=M+D
+A=D+M
 D=A
 @R14
 M=D
@@ -93,7 +98,7 @@ M=D
 AM=M-1
 D=M
 A=A-1
-M=M+D
+M=D+M
 // push this 2
 @2
 D=A
@@ -125,4 +130,4 @@ M=D
 AM=M-1
 D=M
 A=A-1
-M=M+D
+M=D+M

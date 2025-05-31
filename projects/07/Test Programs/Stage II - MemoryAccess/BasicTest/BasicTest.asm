@@ -1,3 +1,8 @@
+// writerInit
+@256
+D=A
+@SP
+M=D
 // push constant 10
 @10
 D=A
@@ -14,7 +19,7 @@ M=D
 @0
 D=A
 @LCL
-A=M+D
+A=D+M
 D=A
 @R14
 M=D
@@ -46,7 +51,7 @@ M=D
 @2
 D=A
 @ARG
-A=M+D
+A=D+M
 D=A
 @R14
 M=D
@@ -64,7 +69,7 @@ M=D
 @1
 D=A
 @ARG
-A=M+D
+A=D+M
 D=A
 @R14
 M=D
@@ -89,7 +94,7 @@ M=D
 @6
 D=A
 @THIS
-A=M+D
+A=D+M
 D=A
 @R14
 M=D
@@ -121,7 +126,7 @@ M=D
 @5
 D=A
 @THAT
-A=M+D
+A=D+M
 D=A
 @R14
 M=D
@@ -139,7 +144,7 @@ M=D
 @2
 D=A
 @THAT
-A=M+D
+A=D+M
 D=A
 @R14
 M=D
@@ -186,7 +191,7 @@ M=D
 AM=M-1
 D=M
 A=A-1
-M=M+D
+M=D+M
 // push argument 1
 @1
 D=A
@@ -228,7 +233,7 @@ M=D
 AM=M-1
 D=M
 A=A-1
-M=M+D
+M=D+M
 // sub
 @SP
 AM=M-1
@@ -247,4 +252,4 @@ M=D
 AM=M-1
 D=M
 A=A-1
-M=M+D
+M=D+M

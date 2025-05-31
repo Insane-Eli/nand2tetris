@@ -69,13 +69,14 @@ public class VMTranslator {
                     case 8 -> codeWriter.writeArithmetic("and");
                     case 9 -> codeWriter.writeArithmetic("or");
                     case 10 -> codeWriter.writeArithmetic("not");
+
+                    // Chapter 8
                     case 11 -> codeWriter.writeLabel(parser.arg1());
                     case 12 -> codeWriter.writeGoto(parser.arg1());
                     case 13 -> codeWriter.writeIf(parser.arg1());
-						
-                    // case 14 -> codeWriter.writeCall("call", 5);
-                    // case 15 -> codeWriter.writeReturn();
-                    // case 16 -> codeWriter.writeFunction("function", 5);
+                    case 14 -> codeWriter.writeCall("call", 5);
+                    case 15 -> codeWriter.writeReturn();
+                    case 16 -> codeWriter.writeFunction("function", 5);
 
                     default -> System.out.print("?");
                 }

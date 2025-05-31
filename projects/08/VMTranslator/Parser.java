@@ -47,7 +47,6 @@ public class Parser {
         arg2 = -1;
 
         // We split our array into the components for analysis
-        System.out.println(currentLine);
         stringArr = currentLine.split(" ");
         currentCommand = stringArr[0];
 
@@ -84,14 +83,14 @@ public class Parser {
             case "and" -> 8;
             case "or" -> 9;
             case "not" -> 10;
+
+            // Chapter 8
             case "label" -> 11;
             case "goto" -> 12;
             case "if-goto" -> 13;
-
-			// Chapter 8
-            // case "call" -> 14;
-            // case "return" -> 15;
-            // case "function" -> 16;
+            case "call" -> 14;
+            case "return" -> 15;
+            case "function" -> 16;
 
             default -> -1;
         };

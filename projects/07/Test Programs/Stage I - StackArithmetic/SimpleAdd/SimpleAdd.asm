@@ -1,3 +1,8 @@
+// writerInit
+@256
+D=A
+@SP
+M=D
 // push constant 7
 @7
 D=A
@@ -17,4 +22,4 @@ M=D
 AM=M-1
 D=M
 A=A-1
-M=M+D
+M=D+M

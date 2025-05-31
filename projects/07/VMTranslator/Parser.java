@@ -47,7 +47,6 @@ public class Parser {
         arg2 = -1;
 
         // We split our array into the components for analysis
-        System.out.println(currentLine);
         stringArr = currentLine.split(" ");
         currentCommand = stringArr[0];
 
