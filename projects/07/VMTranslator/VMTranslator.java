@@ -83,7 +83,7 @@ public class VMTranslator {
 
             codeWriter.close();
         } catch (IOException e) {
-            System.out.println("IOException: translateFile()");
+            System.out.println("IOException: VMTranslator.translateFile()");
         }
     }
 }

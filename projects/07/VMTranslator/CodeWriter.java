@@ -3,141 +3,148 @@ import java.io.*;
 
 public class CodeWriter {
 
-    File outFile;
-    FileWriter printWriter;
-    String filename;
+    FileWriter printWriter;;
+    String fileName;
+    String staticName;
     int uniqueLabelTag = 1;
-    String staticname;
 
     /* The project for chapter 7 only deals with arithmetic command and push/pop.
 		functions, call, return, label will be dealt with in chapter 8.	*/
- /* The constructor opens an output file/stream and gets ready to 
+
+    /* The constructor opens an output file/stream and gets ready to 
 		write into it. The argument will identify the output file / stream.
 		This can be done by sending in a stream */
+
     public CodeWriter(FileWriter FW) {
         printWriter = FW;
 		writerInit();
     }
 
-    public void setFileName(String inFileName) {
-        filename = inFileName;
-
-        // staticname = filename.replace("vm", "").substring((filename.lastIndexOf("/")+1), (filename.indexOf(".")+1));
-        // only needed fix #2
-        staticname = new File(inFileName).getName().replace(".vm", ""); // got this fix courtesy of chatGPT but i think it's right
-
-    }
-
-    public void w(String cmd) {
+     // this is the write command that writes to the new file, but was shortened to 'w' so it could be typed fast
+    public void w(String segment) {
         try {
-            printWriter.write(cmd + "\n");
-        } catch (Exception e) {
-			e.printStackTrace();
+            printWriter.write(segment + "\n");
+        } catch (IOException e) {
+			System.out.println("IOException: CodeWriter.w()");
         }
     }
 
+    // I know this is a silly setup since we could throw this all in the constructor, but it says we need a setFileName() function in the book, so I must've done something a different way somewhere along the road that made it useless?
+    public void setFileName(String inFileName) { 
+        fileName = inFileName;
+        staticName = new File(fileName).getName().replace(".vm", ""); // only takes the name of the file without including the .vm extension or directory, used for static variables
+    }
+
+    // This is the assembly for all of the arithmetic commands.
     public void writeArithmetic(String command) {
-        //System.out.println(command);
         try {
             switch (command) {
-                case "add":
+                case "add" -> {
                     w("// add");
-                    w("@SP");
-                    w("AM=M-1");
-                    w("D=M");
-                    w("A=A-1");
-                    w("M=M+D");
-                    break;
-                case "sub":
-                    w("// sub");
-                    w("@SP");
-                    w("AM=M-1");
-                    w("D=M");
-                    w("A=A-1");
-                    w("M=M-D");
-                    break;
-                case "neg":
-                    w("// neg");
-                    w("@SP");
-                    w("A=M-1");
-                    w("M=-M");
-                    break;
-                case "eq":
-                    w("// eq");
-                    w("@SP");
-                    w("AM=M-1");
-                    w("D=M");
-                    w("A=A-1");
-                    w("D=M-D");
-                    w("M=-1");
-                    w("@eq" + uniqueLabelTag);
-                    w("D;JEQ");
-                    w("@SP");
-                    w("A=M-1");
-                    w("M=0");
-                    w("(eq" + uniqueLabelTag + ")");
-                    uniqueLabelTag++;
-                    break;
-                case "gt":
-                    w("// gt");
-                    w("@SP");
-                    w("AM=M-1");
-                    w("D=M");
-                    w("A=A-1");
-                    w("D=M-D");
-                    w("M=-1");
-                    w("@gt" + uniqueLabelTag);
-                    w("D;JGT");
-                    w("@SP");
-                    w("A=M-1");
-                    w("M=0");
-                    w("(gt" + uniqueLabelTag + ")");
-                    uniqueLabelTag++;
-                    break;
-                case "lt":
-                    w("// lt");
-                    w("@SP");
-                    w("AM=M-1");
-                    w("D=M");
-                    w("A=A-1");
-                    w("D=M-D");
-                    w("M=-1");
-                    w("@lt" + uniqueLabelTag);
-                    w("D;JLT");
-                    w("@SP");
-                    w("A=M-1");
-                    w("M=0");
-                    w("(lt" + uniqueLabelTag + ")");
-                    uniqueLabelTag++;
-                    break;
-                case "and":
-                    w("// and");
-                    w("@SP");
-                    w("AM=M-1");
-                    w("D=M");
-                    w("A=A-1");
-                    w("M=D&M");
-                    break;
-                case "or":
-                    w("// or");
-                    w("@SP");
-                    w("AM=M-1");
-                    w("D=M");
-                    w("A=A-1");
-                    w("M=D|M");
-                    break;
-                case "not":
-                    w("// not");
-                    w("@SP");
-                    w("A=M-1");//go to top of stack
-                    w("M=!M");//make it not itself
-                    break;
+                    w("@SP"); // Go to the stack pointer
+                    w("AM=M-1"); // Go to the top of the stack + move the stack pointer down in advance
+                    w("D=M"); // Store whatever used to be at the top of the stack
+                    w("A=A-1"); // Go down one (to what is now the top of the stack)
+                    w("M=D+M"); // Add the two together
+                }
 
-                default:
-                    w("?\n");
+                case "sub" -> {
+                    w("// sub");
+                    w("@SP"); // Go to the stack pointer
+                    w("AM=M-1"); // Go to the top of the stack + move the stack pointer down in advance
+                    w("D=M"); // Store whatever used to be at the top of the stack
+                    w("A=A-1"); // Go down one (to what is now the top of the stack)
+                    w("M=M-D"); // Subtract the two (element below - element above)
+                }
+
+                case "neg" -> {
+                    w("// neg");
+                    w("@SP"); // Go to the stack pointer
+                    w("A=M-1"); // Go to whatever's at the top of the stack
+                    w("M=-M"); // Make it negative
+                }
+
+                case "eq" -> {
+                    w("// eq");
+                    w("@SP"); // Go to the stack pointer
+                    w("AM=M-1"); // Go to the top of the stack + move the stack pointer down in advance
+                    w("D=M"); // Store whatever used to be at the top of the stack
+                    w("A=A-1"); // Go down one (to what is now the top of the stack)
+                    w("D=M-D"); // Subtract the two (element below - element above) and store it
+                    w("M=-1"); // Set the top of the stack to -1 (all 1s) for now, and we'll change it if the comparison comes out false
+                    w("@eq" + uniqueLabelTag); // Prepare to jump ahead
+                    w("D;JEQ"); // Jump ahead if the comparison comes out as true, else...
+                    w("@SP"); // Go to the stack pointer
+                    w("A=M-1"); // Go to whatever's at the top of the stack
+                    w("M=0"); // Set the top of the stack to false (all 0s)
+                    w("(eq" + uniqueLabelTag + ")"); // If the comparison comes out as true, we'll have jumped here to avoid setting the top of the stack to false
+                    uniqueLabelTag++; // Lastly, incriment uniqueLabelTag so that the next run through will have a new tag
+                }
+
+                case "gt" -> {
+                    w("// gt");
+                    w("@SP"); // Go to the stack pointer
+                    w("AM=M-1"); // Go to the top of the stack + move the stack pointer down in advance
+                    w("D=M"); // Store whatever used to be at the top of the stack
+                    w("A=A-1"); // Go down one (to what is now the top of the stack)
+                    w("D=M-D"); // Subtract the two (element below - element above) and store it
+                    w("M=-1"); // Set the top of the stack to -1 (all 1s) for now, and we'll change it if the comparison comes out false
+                    w("@gt" + uniqueLabelTag); // Prepare to jump ahead
+                    w("D;JGT"); // Jump ahead if the comparison comes out as true, else...
+                    w("@SP"); // Go to the stack pointer
+                    w("A=M-1"); // Go to whatever's at the top of the stack
+                    w("M=0"); // Set the top of the stack to false (all 0s)
+                    w("(gt" + uniqueLabelTag + ")"); // If the comparison comes out as true, we'll have jumped here to avoid setting the top of the stack to false
+                    uniqueLabelTag++; // Lastly, incriment uniqueLabelTag so that the next run through will have a new tag
+                }
+
+                case "lt" -> {
+                    w("// lt");
+                    w("@SP"); // Go to the stack pointer
+                    w("AM=M-1"); // Go to the top of the stack + move the stack pointer down in advance
+                    w("D=M"); // Store whatever used to be at the top of the stack
+                    w("A=A-1"); // Go down one (to what is now the top of the stack)
+                    w("D=M-D"); // Subtract the two (element below - element above) and store it
+                    w("M=-1"); // Set the top of the stack to -1 (all 1s) for now, and we'll change it if the comparison comes out false
+                    w("@lt" + uniqueLabelTag); // Prepare to jump ahead
+                    w("D;JLT"); // Jump ahead if the comparison comes out as true, else...
+                    w("@SP"); // Go to the stack pointer
+                    w("A=M-1"); // Go to whatever's at the top of the stack
+                    w("M=0"); // Set the top of the stack to false (all 0s)
+                    w("(lt" + uniqueLabelTag + ")"); // If the comparison comes out as true, we'll have jumped here to avoid setting the top of the stack to false
+                    uniqueLabelTag++; // Lastly, incriment uniqueLabelTag so that the next run through will have a new tag
+                }
+
+                case "and" -> {
+                    w("// and");
+                    w("@SP"); // Go to the stack pointer
+                    w("AM=M-1"); // Go to the top of the stack + move the stack pointer down in advance
+                    w("D=M"); // Store whatever used to be at the top of the stack
+                    w("A=A-1"); // Go down one (to what is now the top of the stack)
+                    w("M=D&M"); // And the two together
+                }
+
+                case "or" -> {
+                    w("// or");
+                    w("@SP"); // Go to the stack pointer
+                    w("AM=M-1"); // Go to the top of the stack + move the stack pointer down in advance
+                    w("D=M"); // Store whatever used to be at the top of the stack
+                    w("A=A-1"); // Go down one (to what is now the top of the stack)
+                    w("M=D|M"); // Or the two together
+                }
+
+                case "not" -> {
+                    w("// not");
+                    w("@SP"); // Go to the stack pointer
+                    w("A=M-1"); // Go to whatever's at the top of the stack
+                    w("M=!M"); // Make it not itself
+                }
+
+                default -> w("Error: Unknown arithmetic");
             }
+
         } catch (Exception e) {
-            e.printStackTrace();
+            System.out.println("Exception: CodeWriter.writeArithmetic()");
         }
 
         // This function should present a series of checks to determine which
@@ -149,71 +156,84 @@ public class CodeWriter {
 		use of a Java ENUM. To make sure the prep documents are compilable, String
 		was used instead of an ENUM. The coders should feel free to replace the
 		parameter type as fits their implementation. */
-    //push whatevers on the index after the address of ___
-    public void push(String cmd, int index) {
+
+    // This push() pushes whatever's inside the spot (index) spaces above (@segment)
+    public void push(String segment, int index) {
         try {
-            w("@" + index);
-            w("D=A");//D is whatever the index is
-            w("@" + cmd);
-            w("A=D+M");//address is @segment + the index
-            w("D=M");//D now stores the value of the right address
-            w("@SP");
-            w("M=M+1");//SP is now up one
-            w("A=M-1");//we go to where SP previously was (which was on top of the stack)
-            w("M=D");//and now the top of the stack is D
+            w("@" + index); // Go to the address of the index
+            w("D=A"); // Store the address (index) in D
+            w("@" + segment); // Go to the address of the segment
+            w("A=D+M"); // Go to the address of the segment + the index
+            w("D=M"); // D now stores the memory of the segment + index
+            w("@SP"); // Go to the stack pointer
+            w("M=M+1"); // Move the stack pointer up
+            w("A=M-1"); // Go to where the stack pointer previously was (above the top of the stack)
+            w("M=D"); // Make the new top of the stack whatever was in D
         } catch (Exception e) {
-			e.printStackTrace();
+			System.out.println("Exception: CodeWriter.push(segment, index)");
         }
     }
 
+    // This push() pushes whatever's inside (address)
     public void push(String address) {
         try {
-            w(address);//go straight to cmd
-            w("D=M");//D now stores the value of the stuff
-            w("@SP");
-            w("M=M+1");//SP is now up one
-            w("A=M-1");//we go to where SP previously was (which was on top of the stack)
-            w("M=D");//and now the top of the stack is D
+            w(address); // Go to the address of the address
+            w("D=M"); // D now stores the memory of the address
+            w("@SP"); // Go to the stack pointer
+            w("M=M+1"); // Move the stack pointer up
+            w("A=M-1"); // Go to where the stack pointer previously was (above the top of the stack)
+            w("M=D"); // Make the new top of the stack whatever was in D
         } catch (Exception e) {
-			e.printStackTrace();
+			System.out.println("Exception: CodeWriter.push(address)");
         }
     }
 
-    public void pop(String cmd, int index) {
+    // This pop() pops whatever's at the top of the stack to the spot (index) spaces above (@segment)
+    public void pop(String segment, int index) {
         try {
-            w("@SP");
-            w("AM=M-1");//go to the top of the stack minus one, and change SP to minus one
-            w("D=M");//D is whatever was in there
-            w("@R13");//R13 is temp storage
-            w("M=D");//R13 has the top stack's contents
-            w("@" + index);
-            w("D=A");//now D is the index
-            w("@" + cmd);
-            w("A=M+D");
-            w("D=A");//now D is the index + pointer
-            w("@R14");
-            w("M=D");//R14 has the true address
-            w("@R13");
-            w("D=M");//D is the true storage
-            w("@R14");
-            w("A=M");//now we at the true address
-            w("M=D");//handoff
+            w("@SP"); // Go to the stack pointer
+            w("AM=M-1"); // Go to the top of the stack + move the stack pointer down in advance
+            w("D=M"); // Store whatever used to be at the top of the stack
+            w("@R13"); // Go to R13 (temp storage)
+            w("M=D"); // Put whatever used to be at the top of the stack into R13
+            w("@" + index); // Go to the address of the index
+            w("D=A"); // Store the address (index) in D
+            w("@" + segment); // Go to the address of the segment
+            w("A=D+M"); // Go to the address of the segment + the index
+            w("D=A"); // now D is the right address (index + segment)
+            w("@R14"); // Go to R14 (temp storage)
+            w("M=D"); // R14 has the (right address)
+            w("@R13"); // Go back to R13 (storing the value from the top of the stack)
+            w("D=M"); // D has whatever used to be at the top of the stack
+            w("@R14"); // Go back to R14 (storing the right address)
+            w("A=M"); // Go to the right address
+            w("M=D"); // The right value is now in the memory of the right address
         } catch (Exception e) {
-			e.printStackTrace();
+			System.out.println("Exception: CodeWriter.pop(segment, index)");
         }
     }
 
+    // This pop() pops whatever's at the top of the stack to the spot (address)
     public void pop(String address) {
         try {
-            w("@SP");
-            w("AM=M-1");//go to the top of the stack minus one, and change SP to minus one
-            w("D=M");//D is whatever was in there
-            w(address);
-            w("M=D");//handoff
+            w("@SP"); // Go to the stack pointer
+            w("AM=M-1"); // Go to the top of the stack + move the stack pointer down in advance
+            w("D=M"); // Store whatever used to be at the top of the stack
+            w(address); // Go to the address of the address
+            w("M=D"); // The value is now in the memory of (address)
         } catch (Exception e) {
-			e.printStackTrace();
+			System.out.println("Exception: CodeWriter.pop(address)");
         }
     }
+
+
+    // This function should present a series of checks to determine which
+    // command we are dealing with and the segment. The proper
+    // series of Hack assembly commands must be output to the file.	
+
+    /* As the assembly code will be manipulating the D register frequently, the 
+    coders should consider creating pushD and popD private methods outputting
+    the proper assembly. This will save a lot of code repetition earlier. */
 
     public void writePushPop(String command, String segment, int index) {
         
@@ -221,127 +241,84 @@ public class CodeWriter {
 
             w("// " + command + " " + segment + " " + index);
 
-            if (command.equals("push")) {
+            if (command.equals("push")) { // Push commands
                 switch (segment) {
-                    case "argument": //WORKS
-                        push("ARG", index);
-                        break;
+                    case "argument" -> push("ARG", index);
 
-                    case "local": //WORKS
-                        push("LCL", index);
-                        break;
+                    case "local" -> push("LCL", index);
 
-                    case "this": //WORKS
-                        push("THIS", index);
-                        break;
+                    case "this" ->  push("THIS", index);
 
-                    case "that": //WORKS
-                        push("THAT", index);
-                        break;
+                    case "that" -> push("THAT", index);
 
-                    case "static":
-                        push("@" + staticname + "." + index);
-                        break;
+                    case "static" -> push("@" + staticName + "." + index);
 
-                    case "constant": //WORKS
+                    case "constant" -> {
                         w("@" + index);
                         w("D=A");
                         w("@SP");
                         w("M=M+1");
                         w("A=M-1");
                         w("M=D");
-                        break;
+                    }
 
-                    case "pointer"://WORKS
+                    case "pointer" -> {
                         switch (index) {
-                            case 0:
-                                push("@THIS");
-                                break;
+                            case 0 -> push("@THIS");
 
-                            case 1:
-                                push("@THAT");
-                                break;
+                            case 1 -> push("@THAT");
 
-                            default:
-                                w("pointer error");
-                                break;
-                        };
-                        break;
+                            default -> w("Error: writePushPop(): push: pointer case switch");
+                        }
+                    }
 
-                    case "temp": //WORKS
+                    case "temp" -> {
                         w("@R" + (index + 5));
                         w("D=M");
                         w("@SP");
                         w("M=M+1");
                         w("A=M-1");
                         w("M=D");
-                        break;
+                    }
 
-                    default:
-                        w("error man :/");
-					break;
-                };
+                    default -> w("Error: writePushPop(): push switch ");
+                }
 
-            } else {//POP
+            } else { // Pop commands
                 switch (segment) {
-                    case "argument": //WORKS
-                        pop("ARG", index);
-                        break;
+                    case "argument" -> pop("ARG", index);
 
-                    case "local": //WORKS
-                        pop("LCL", index);
-                        break;
+                    case "local" -> pop("LCL", index);
 
-                    case "this": //WORKS
-                        pop("THIS", index);
-                        break;
+                    case "this" -> pop("THIS", index);
 
-                    case "that": //WORKS
-                        pop("THAT", index);
-                        break;
+                    case "that" -> pop("THAT", index);
 
-                    case "static"://probably fix this and everything else under here
-                        pop("@" + staticname + "." + index);
-                        break;
+                    case "static" -> pop("@" + staticName + "." + index);
 
-                    case "pointer"://WORKS
+                    case "pointer" -> {
                         switch (index) {
-                            case 0:
-                                pop("@THIS");
-                                break;
 
-                            case 1:
-                                pop("@THAT");
-                                break;
+                            case 0 -> pop("@THIS");
 
-                            default:
-                                w("pointer error");
-                                break;
-                        };
-                        break; // only needed fix #2
+                            case 1 -> pop("@THAT");
 
-                    case "temp": //WORKS
-                        pop("@R" + (index + 5));
-                        break;
+                            default -> w("Error: writePushPop(): pop: pointer case switch");
+                        }
+                    }
 
-                    default:
-                        w("error popping");
-                        break;
-                };
+                    case "temp" -> pop("@R" + (index + 5));
+
+                    default -> w("Error: writePushPop(): pop switch");
+                }
             }
         } catch (Exception e) {
-			e.printStackTrace();
+			System.out.println("Exception: CodeWriter.writePushPop()");
         }
-        // This function should present a series of checks to determine which
-        // command we are dealing with and the segment. The proper
-        // series of Hack assembly commands must be output to the file.	
-
-        /* As the assembly code will be manipulating the D register frequently, the 
-		coders should consider creating pushD and popD private methods outputting
-		the proper assembly. This will save a lot of code repetition earlier. */
     }
-
-    public void writerInit() {
+    
+    // Set the value of @SP to 256
+    private void writerInit() {
         w("// writerInit");
         w("@256");
         w("D=A");
@@ -380,11 +357,13 @@ public class CodeWriter {
 //	public void writeFunction(String functionName, int numLocals) {
 //		w("function " + functionName + " " + numLocals);
 //	}
+
+    // Close the printWriter
     public void close() {
         try {
             printWriter.close();
-        } catch (Exception e) {
-            e.printStackTrace();
+        } catch (IOException e) {
+            System.out.print("IOException: codeWriter.close()");
         }
     }
 }

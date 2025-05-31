@@ -35,7 +35,7 @@ public class Parser {
                 }
             }
         } catch (IOException e) {
-            System.out.println("IOException: hasMoreCommands()");
+            System.out.println("IOException: Parser.hasMoreCommands()");
         }
         return false;
     }
@@ -58,7 +58,7 @@ public class Parser {
             try {
                 arg2 = Integer.parseInt(stringArr[2]);
             } catch (NumberFormatException e) {
-                System.out.println("NumberFormatException: advance()");
+                System.out.println("NumberFormatException: Parser.advance()");
             }
         } else {
             arg1 = stringArr[0];
