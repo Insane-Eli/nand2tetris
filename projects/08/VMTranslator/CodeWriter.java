@@ -358,36 +358,36 @@ public class CodeWriter {
 
         // Next we gotta save the return address so we know where to put stuff once the function finishes
         // Since we're saving the address and not the memory inside of the address, we can't use our push function, so we have to do it manually
-        w("@" + returnLabel); // Go to the address of the address
+        w("@" + returnLabel);
         w("D=A"); // D now stores the address (this is the line we had to change from push())
-        w("@SP"); // Go to the stack pointer
-        w("M=M+1"); // Move the stack pointer up
-        w("A=M-1"); // Go to where the stack pointer previously was (above the top of the stack)
-        w("M=D"); // Make the new top of the stack whatever was in D
+        w("@SP");
+        w("M=M+1");
+        w("A=M-1");
+        w("M=D");
 
         // And we gotta save wherever the segment pointers were so we can put them back once the function finishes
-        push("@LCL"); // LCL
-        push("@ARG"); // ARG
-        push("@THIS"); // THIS
-        push("@THAT"); // THAT
+        push("@LCL");
+        push("@ARG");
+        push("@THIS");
+        push("@THAT");
 
         // Since we have 5 things that are now on the stack, we have to store wherever the stack pointer ORIGINALLY was inside of ARG
-        w("@SP"); // Go to the stack pointer
-        w("D=M"); // D now stores the stack pointer
-        w("@" + (numArgs + 5)); // Number of arguments + the 5 things we saved
-        w("D=D-A"); // Now D stores where the stack pointer ORIGINALLY was before we threw all of the segments and arguments on it
-        w("@ARG"); // Go to ARG
-        w("M=D"); // ARG now stores the OG stack pointer
+        w("@SP");
+        w("D=M");
+        w("@" + (numArgs + 5));
+        w("D=D-A");
+        w("@ARG");
+        w("M=D");
 
         // And the address of whatever the stack pointer is NOW goes inside LCL
-        w("@SP"); // Go to the stack pointer
-        w("D=M"); // D now stores the stack pointer
-        w("@LCL"); // Go to LCL
-        w("M=D"); // LCL now stores the NEW stack pointer
+        w("@SP");
+        w("D=M");
+        w("@LCL");
+        w("M=D");
 
         // Last but not least, we have to jump to the start of the function using our GOTO function
-        w("@" + functionName); // Go to our functions address
-        w("0;JMP"); // And jump to that label
+        w("@" + functionName);
+        w("0;JMP");
 
         // And make a return label so we know where to come back once the function finishes
         w("(" + returnLabel + ")");
@@ -397,8 +397,6 @@ public class CodeWriter {
 
 	public void writeReturn() {
 		w("// return");
-
-        // Side note: I'm gonna stop commenting each and every little thing, it's pretty easy to see what's happening, and doing it every line is too much work :(
 
         // OK, so first, let's get some things straight.
         // With the way our writeCall() works, our function took up a chunk of the stack to free up some space for the pointers
@@ -410,14 +408,14 @@ public class CodeWriter {
         w("@R13");
         w("M=D");
 
-        // Next let's throw the OG stack pointer (NEW stack pointer - the 5 things we threw on the stack) into temp storage (R14)
+        // Next let's throw the return address into temp storage (R14), which we can get by doing D (Which holds the NEW stack pointer) - the 5 things we threw on the stack
         w("@5");
         w("A=D-A");
         w("D=M");
         w("@R14");
         w("M=D");
 
-        // pop the function's return value and put it in @ARG (where the caller expects it to be)
+        // Take the return value from the top of the stack and put it where the caller expects it (at ARG, which is where our OG stack pointer is)
         w("@SP");
         w("AM=M-1");
         w("D=M");
@@ -425,51 +423,43 @@ public class CodeWriter {
         w("A=M"); // extra line from pop()
         w("M=D");
 
-        /*          
-
-            w("@SP"); // Go to the stack pointer
-            w("AM=M-1"); // Go to the top of the stack + move the stack pointer down in advance
-            w("D=M"); // Store whatever used to be at the top of the stack
-            w(address); // Go to the address of the address
-            w("M=D"); // The value is now in the memory of (address)
-
-        */
-
-        // SP = ARG + 1
+        // Change @SP to the spot @ARG points to  + 1
         w("@ARG");
         w("D=M+1");
         w("@SP");
         w("M=D");
 
-        // THAT = *(FRAME - 1)
+        // Since R13 stores the spot where the stack pointer with all of our segments on it used to be, we use it to now put all of them back
+
+        // Put THAT back and move R13 down one
         w("@R13");
         w("AM=M-1");
         w("D=M");
         w("@THAT");
         w("M=D");
 
-        // THIS = *(FRAME - 2)
+        // Put THIS back and move R13 down one
         w("@R13");
         w("AM=M-1");
         w("D=M");
         w("@THIS");
         w("M=D");
 
-        // ARG = *(FRAME - 3)
+        // Put ARG back and move R13 down one
         w("@R13");
         w("AM=M-1");
         w("D=M");
         w("@ARG");
         w("M=D");
 
-        // LCL = *(FRAME - 4)
+        // Put LCL back and move R13 down one
         w("@R13");
         w("AM=M-1");
         w("D=M");
         w("@LCL");
         w("M=D");
 
-        // goto RET
+        // Jump to the return address (stored in R14 from earlier) to resume execution
         w("@R14");
         w("A=M");
         w("0;JMP");
