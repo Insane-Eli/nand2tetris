@@ -78,7 +78,7 @@ public class VMTranslator {
                     case 15 -> codeWriter.writeReturn();
                     case 16 -> codeWriter.writeFunction("function", 5);
 
-                    default -> System.out.print("?");
+                    default -> System.out.println("Error: VMTranslator.java: translatefile(): Unknown Command Type");
                 }
             }
 

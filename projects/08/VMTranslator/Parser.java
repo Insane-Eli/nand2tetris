@@ -28,6 +28,11 @@ public class Parser {
                 // If the first character is a valid character of code, return true
                 if (!(currentLine.startsWith("//") || currentLine.isBlank())) {
 
+                    // Remove the comments after code that appear in Chapter 8
+                    if (currentLine.contains("//")) {
+                        currentLine = currentLine.split("//")[0].trim();
+                    }
+
                     // Remove any leading whitespace from the current line
                     currentLine = currentLine.trim();
 
@@ -49,19 +54,34 @@ public class Parser {
         // We split our array into the components for analysis
         stringArr = currentLine.split(" ");
         currentCommand = stringArr[0];
+        System.out.print("command = " + currentCommand + ", ");
 
         // Our array is either going to be of length 3 or 1
         // We get arg1 based on the number of elements in stringArr
-        if (stringArr.length > 1) {
+
+        if (stringArr.length > 1) { // If the command has a second element, it must be a word
+            
+            System.out.print("arg1 = " + arg1 + ", ");
             arg1 = stringArr[1];
-            try {
-                arg2 = Integer.parseInt(stringArr[2]);
-            } catch (NumberFormatException e) {
-                System.out.println("NumberFormatException: Parser.advance()");
+
+
+            if (stringArr.length > 2) { // If the command has a third element, it must be a number, RIGHT???
+
+                try {
+                    System.out.print("arg2 = " + arg2);
+                    arg2 = Integer.parseInt(stringArr[2]);
+                } catch (NumberFormatException e) {
+                    System.out.println("NumberFormatException: Parser.advance()");
+                }
+
             }
+
         } else {
+            System.out.print("arg1 = " + arg1);
             arg1 = stringArr[0];
         }
+
+        System.out.println();
 
     }
 
