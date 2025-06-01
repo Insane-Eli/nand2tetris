@@ -12,26 +12,25 @@ public class CodeWriter {
     /* The project for chapter 7 only deals with arithmetic command and push/pop.
 		functions, call, return, label will be dealt with in chapter 8.	*/
 
-    /* The constructor opens an output file/stream and gets ready to 
+ /* The constructor opens an output file/stream and gets ready to 
 		write into it. The argument will identify the output file / stream.
 		This can be done by sending in a stream */
-
     public CodeWriter(FileWriter FW) {
         printWriter = FW;
-		writerInit();
+        writerInit();
     }
 
-     // this is the write command that writes to the new file, but was shortened to 'w' so it could be typed fast
+    // this is the write command that writes to the new file, but was shortened to 'w' so it could be typed fast
     public void w(String segment) {
         try {
             printWriter.write(segment + "\n");
         } catch (IOException e) {
-			System.out.println("IOException: CodeWriter.w()");
+            System.out.println("IOException: CodeWriter.w()");
         }
     }
 
     // I know this is a silly setup since we could throw this all in the constructor, but it says we need a setFileName() function in the book, so I must've done something a different way somewhere along the road that made it useless?
-    public void setFileName(String inFileName) { 
+    public void setFileName(String inFileName) {
         fileName = inFileName;
         staticName = new File(fileName).getName().replace(".vm", ""); // only takes the name of the file without including the .vm extension or directory, used for static variables
     }
@@ -141,7 +140,8 @@ public class CodeWriter {
                     w("M=!M"); // Make it not itself
                 }
 
-                default -> w("Error: Unknown arithmetic");
+                default ->
+                    w("Error: Unknown arithmetic");
             }
 
         } catch (Exception e) {
@@ -153,7 +153,6 @@ public class CodeWriter {
         // series of Hack assembly commands must be output to the file.
     }
 
-
     // This function should present a series of checks to determine which
     // command we are dealing with and the segment. The proper
     // series of Hack assembly commands must be output to the file.	
@@ -161,24 +160,28 @@ public class CodeWriter {
     /* As the assembly code will be manipulating the D register frequently, the 
     coders should consider creating pushD and popD private methods outputting
     the proper assembly. This will save a lot of code repetition earlier. */
-
     public void writePushPop(String command, String segment, int index) {
-        
-		try {
+
+        try {
 
             w("// " + command + " " + segment + " " + index);
 
             if (command.equals("push")) { // Push commands
                 switch (segment) {
-                    case "argument" -> push("ARG", index);
+                    case "argument" ->
+                        push("ARG", index);
 
-                    case "local" -> push("LCL", index);
+                    case "local" ->
+                        push("LCL", index);
 
-                    case "this" ->  push("THIS", index);
+                    case "this" ->
+                        push("THIS", index);
 
-                    case "that" -> push("THAT", index);
+                    case "that" ->
+                        push("THAT", index);
 
-                    case "static" -> push("@" + staticName + "." + index);
+                    case "static" ->
+                        push("@" + staticName + "." + index);
 
                     case "constant" -> {
                         w("@" + index);
@@ -191,11 +194,14 @@ public class CodeWriter {
 
                     case "pointer" -> {
                         switch (index) {
-                            case 0 -> push("@THIS");
+                            case 0 ->
+                                push("@THIS");
 
-                            case 1 -> push("@THAT");
+                            case 1 ->
+                                push("@THAT");
 
-                            default -> w("Error: writePushPop(): push: pointer case switch");
+                            default ->
+                                w("Error: writePushPop(): push: pointer case switch");
                         }
                     }
 
@@ -208,39 +214,50 @@ public class CodeWriter {
                         w("M=D");
                     }
 
-                    default -> w("Error: writePushPop(): push switch ");
+                    default ->
+                        w("Error: writePushPop(): push switch ");
                 }
 
             } else { // Pop commands
                 switch (segment) {
-                    case "argument" -> pop("ARG", index);
+                    case "argument" ->
+                        pop("ARG", index);
 
-                    case "local" -> pop("LCL", index);
+                    case "local" ->
+                        pop("LCL", index);
 
-                    case "this" -> pop("THIS", index);
+                    case "this" ->
+                        pop("THIS", index);
 
-                    case "that" -> pop("THAT", index);
+                    case "that" ->
+                        pop("THAT", index);
 
-                    case "static" -> pop("@" + staticName + "." + index);
+                    case "static" ->
+                        pop("@" + staticName + "." + index);
 
                     case "pointer" -> {
                         switch (index) {
 
-                            case 0 -> pop("@THIS");
+                            case 0 ->
+                                pop("@THIS");
 
-                            case 1 -> pop("@THAT");
+                            case 1 ->
+                                pop("@THAT");
 
-                            default -> w("Error: writePushPop(): pop: pointer case switch");
+                            default ->
+                                w("Error: writePushPop(): pop: pointer case switch");
                         }
                     }
 
-                    case "temp" -> pop("@R" + (index + 5));
+                    case "temp" ->
+                        pop("@R" + (index + 5));
 
-                    default -> w("Error: writePushPop(): pop switch");
+                    default ->
+                        w("Error: writePushPop(): pop switch");
                 }
             }
         } catch (Exception e) {
-			System.out.println("Exception: CodeWriter.writePushPop()");
+            System.out.println("Exception: CodeWriter.writePushPop()");
         }
     }
 
@@ -248,7 +265,6 @@ public class CodeWriter {
 		use of a Java ENUM. To make sure the prep documents are compilable, String
 		was used instead of an ENUM. The coders should feel free to replace the
 		parameter type as fits their implementation. */
-
     // This push() pushes whatever's inside the spot (index) spaces above (@segment)
     public void push(String segment, int index) {
         try {
@@ -262,7 +278,7 @@ public class CodeWriter {
             w("A=M-1"); // Go to where the stack pointer previously was (above the top of the stack)
             w("M=D"); // Make the new top of the stack whatever was in D
         } catch (Exception e) {
-			System.out.println("Exception: CodeWriter.push(segment, index)");
+            System.out.println("Exception: CodeWriter.push(segment, index)");
         }
     }
 
@@ -276,7 +292,7 @@ public class CodeWriter {
             w("A=M-1"); // Go to where the stack pointer previously was (above the top of the stack)
             w("M=D"); // Make the new top of the stack whatever was in D
         } catch (Exception e) {
-			System.out.println("Exception: CodeWriter.push(address)");
+            System.out.println("Exception: CodeWriter.push(address)");
         }
     }
 
@@ -301,7 +317,7 @@ public class CodeWriter {
             w("A=M"); // Go to the right address
             w("M=D"); // The right value is now in the memory of the right address
         } catch (Exception e) {
-			System.out.println("Exception: CodeWriter.pop(segment, index)");
+            System.out.println("Exception: CodeWriter.pop(segment, index)");
         }
     }
 
@@ -314,11 +330,10 @@ public class CodeWriter {
             w(address); // Go to the address of the address
             w("M=D"); // The value is now in the memory of (address)
         } catch (Exception e) {
-			System.out.println("Exception: CodeWriter.pop(address)");
+            System.out.println("Exception: CodeWriter.pop(address)");
         }
     }
 
-    
     // Set the value of @SP to 256
     private void writerInit() {
         w("// writerInit");
@@ -348,8 +363,11 @@ public class CodeWriter {
         w("D;JNE");
     }
 
-	public void writeCall(String functionName, int numArgs) {
+    public void writeCall(String functionName, int numArgs) {
 
+        // Alright, so basically for our functions, we'll need to be able to use local variables and access certain memory spots, stuff that relies on our segment pointers like LCL and ARG
+        // Since function calls can be within function calls, we have to make sure that whenever we're about to use our pointers, we store the original values they hold so that we can restore them when the current function is done
+        // So we throw all of them on the stack
         w("// call " + functionName + " " + numArgs);
 
         // First and foremost lets give our function a unique name
@@ -357,7 +375,8 @@ public class CodeWriter {
         String returnLabel = functionName + "$ret." + functionLabelTag;
 
         // Next we gotta save the return address so we know where to put stuff once the function finishes
-        // Since we're saving the address and not the memory inside of the address, we can't use our push function, so we have to do it manually
+        // Since we're pushing the literal address and not the memory inside of the address, 
+        // we can't use our push() function that expects to push the memory of whatever we give it, so we have to do it manually
         w("@" + returnLabel);
         w("D=A"); // D now stores the address (this is the line we had to change from push())
         w("@SP");
@@ -365,13 +384,13 @@ public class CodeWriter {
         w("A=M-1");
         w("M=D");
 
-        // And we gotta save wherever the segment pointers were so we can put them back once the function finishes
+        // And we gotta save whatever values the segment pointers point to so that we can put them back once the function finishes
         push("@LCL");
         push("@ARG");
         push("@THIS");
         push("@THAT");
 
-        // Since we have 5 things that are now on the stack, we have to store wherever the stack pointer ORIGINALLY was inside of ARG
+        // Since we have 5 things that are now on the stack, we set @ARG to @SP - 5 - numArgs so that the function knows where the arguments start
         w("@SP");
         w("D=M");
         w("@" + (numArgs + 5));
@@ -379,7 +398,7 @@ public class CodeWriter {
         w("@ARG");
         w("M=D");
 
-        // And the address of whatever the stack pointer is NOW goes inside LCL
+        // And LCL is set to whatever the stack pointer is after all of that pushing happens to mark where we can put all of our local variables (a.k.a. the base address)
         w("@SP");
         w("D=M");
         w("@LCL");
@@ -391,31 +410,27 @@ public class CodeWriter {
 
         // And make a return label so we know where to come back once the function finishes
         w("(" + returnLabel + ")");
-	}
-	
+    }
 
+    public void writeReturn() {
+        w("// return");
 
-	public void writeReturn() {
-		w("// return");
-
-        // OK, so first, let's get some things straight.
         // With the way our writeCall() works, our function took up a chunk of the stack to free up some space for the pointers
         // When we return, it's our job to restore everything to how it was pre-call
-
-        // First lets throw LCL (which stores the NEW stack pointer after throwing all of our segments on the stack) into temp storage (R13)
+        // First lets throw LCL (which stores the "base address" of the function's local variables) into temp storage (R13)
         w("@LCL");
         w("D=M");
         w("@R13");
         w("M=D");
 
-        // Next let's throw the return address into temp storage (R14), which we can get by doing D (Which holds the NEW stack pointer) - the 5 things we threw on the stack
+        // Next let's throw the return address into temp storage (R14), which we can get by doing D (Which holds the base address) - 5 (because we threw 4 memory segments on the stack after the return address)
         w("@5");
         w("A=D-A");
         w("D=M");
         w("@R14");
         w("M=D");
 
-        // Take the return value from the top of the stack and put it where the caller expects it (at ARG, which is where our OG stack pointer is)
+        // Take the return value from the top of the stack and put it where the caller expects it at ARG, which is at the very start of our local function
         w("@SP");
         w("AM=M-1");
         w("D=M");
@@ -429,8 +444,7 @@ public class CodeWriter {
         w("@SP");
         w("M=D");
 
-        // Since R13 stores the spot where the stack pointer with all of our segments on it used to be, we use it to now put all of them back
-
+        // Since R13 stores the "base address" of the function's local variables, where the stack pointer with all of our segments on it used to be, we can use it to now put all of them back
         // Put THAT back and move R13 down one
         w("@R13");
         w("AM=M-1");
@@ -459,15 +473,30 @@ public class CodeWriter {
         w("@LCL");
         w("M=D");
 
-        // Jump to the return address (stored in R14 from earlier) to resume execution
+        // Jump to the return address (stored in R14 from earlier)
         w("@R14");
         w("A=M");
         w("0;JMP");
-	}
-	
-	public void writeFunction(String functionName, int numLocals) {
-		w("// function " + functionName + " " + numLocals);
-	}
+    }
+
+    public void writeFunction(String functionName, int numLocals) {
+
+        w("// function " + functionName + " " + numLocals);
+
+        // Write the label so we know where it starts
+        w("(" + functionName + "$ret." + functionLabelTag + ")");
+
+        // Set all local variables to 0 by pushing 0 numLocals times
+        for (int i = 0; i < numLocals; i++) {
+            w("@0");
+            w("D=A");
+            w("@SP");
+            w("A=M");
+            w("M=D");
+            w("@SP");
+            w("M=M+1");
+        }
+    }
 
     // Close the printWriter
     public void close() {
