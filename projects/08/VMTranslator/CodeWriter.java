@@ -484,7 +484,7 @@ public class CodeWriter {
         w("// function " + functionName + " " + numLocals);
 
         // Write the label so we know where it starts
-        w("(" + functionName + "$ret." + functionLabelTag + ")");
+        w("(" + functionName + ")");
 
         // Set all local variables to 0 by pushing 0 numLocals times
         for (int i = 0; i < numLocals; i++) {
