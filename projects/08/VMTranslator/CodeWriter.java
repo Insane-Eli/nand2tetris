@@ -412,6 +412,9 @@ public class CodeWriter {
         w("(" + returnLabel + ")");
     }
 
+
+
+
     public void writeReturn() {
         w("// return");
 
@@ -479,6 +482,9 @@ public class CodeWriter {
         w("0;JMP");
     }
 
+
+
+
     public void writeFunction(String functionName, int numLocals) {
 
         w("// function " + functionName + " " + numLocals);
@@ -498,6 +504,9 @@ public class CodeWriter {
         }
     }
 
+
+
+    
     // Close the printWriter
     public void close() {
         try {

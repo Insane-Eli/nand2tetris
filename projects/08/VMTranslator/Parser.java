@@ -47,9 +47,10 @@ public class Parser {
 
     // advance() will match the current
     public void advance() {
+        System.out.println("// " + currentLine);
 
-        arg1 = "";
-        arg2 = -1;
+        arg1 = ""; // word
+        arg2 = -1; // index
 
         // We split our array into the components for analysis
         stringArr = currentLine.split(" ");
@@ -61,27 +62,27 @@ public class Parser {
 
         if (stringArr.length > 1) { // If the command has a second element, it must be a word
             
-            System.out.print("arg1 = " + arg1 + ", ");
             arg1 = stringArr[1];
+            System.out.print("arg1 = " + arg1 + ", "); // DEBUG JAWN
 
 
             if (stringArr.length > 2) { // If the command has a third element, it must be a number, RIGHT???
 
                 try {
-                    System.out.print("arg2 = " + arg2);
                     arg2 = Integer.parseInt(stringArr[2]);
+                    System.out.print("arg2 = " + arg2); // DEBUG JAWN
                 } catch (NumberFormatException e) {
                     System.out.println("NumberFormatException: Parser.advance()");
                 }
 
             }
 
-        } else {
-            System.out.print("arg1 = " + arg1);
+        } else { // * prolly a computation or shart
             arg1 = stringArr[0];
+            System.out.print("arg1 = " + arg1); // DEBUG JAWN
         }
 
-        System.out.println();
+        System.out.println(); // DEBUG JAWN
 
     }
 
