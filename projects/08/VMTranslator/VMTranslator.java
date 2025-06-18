@@ -7,59 +7,68 @@ public class VMTranslator {
     static int debugLevel = 10; // not sure if we need this but probably don't touch it
 
     public static void main(String args[]) {
-        // Get input file or directory name
-        String inFileName = args[0];
-        File inputFile = new File(inFileName);
-
+        String inputPath = args[0];
+        File inputFile = new File(inputPath);
+    
         if (inputFile.isDirectory()) {
-            // Handle directory input
-            traverseDirectory(inputFile);
+            // Make one output .asm file named after the directory
+            String outputFileName = inputFile.getAbsolutePath() + "/" + inputFile.getName() + ".asm";
+    
+            try {
+                fileWriter = new FileWriter(outputFileName);
+                CodeWriter codeWriter = new CodeWriter(fileWriter);
+                codeWriter.writerInit(); // writes bootstrap code
+    
+                traverseDirectory(inputFile, codeWriter);
+    
+                codeWriter.close();
+            } catch (IOException e) {
+                System.out.println("Error writing output file");
+            }
         } else {
-            // Handle single file input
-            translateFile(inputFile);
+            // One .vm file → one .asm file
+            String outputFileName = inputPath.replace(".vm", ".asm");
+    
+            try {
+                fileWriter = new FileWriter(outputFileName);
+                CodeWriter codeWriter = new CodeWriter(fileWriter);
+    
+                translateFile(inputFile, codeWriter);
+    
+                codeWriter.close();
+            } catch (IOException e) {
+                System.out.println("Error writing output file");
+            }
         }
     }
+    
 
-    private static void traverseDirectory(File directory) {
+    private static void traverseDirectory(File directory, CodeWriter codeWriter) {
         File[] files = directory.listFiles();
         if (files != null) {
             for (File file : files) {
                 if (file.isDirectory()) {
-                    // Recursively process subdirectory
-                    traverseDirectory(file);
+                    traverseDirectory(file, codeWriter);
                 } else if (file.getName().endsWith(".vm")) {
-                    // Process VM file
-                    translateFile(file);
+                    translateFile(file, codeWriter);
                 }
             }
         }
     }
+    
 
-    private static void translateFile(File vmFile) {
+    private static void translateFile(File vmFile, CodeWriter codeWriter) {
         String inFileName = vmFile.getAbsolutePath();
-        String outFileName = inFileName.replace(".vm", ".asm");
-
-        System.out.println("File: " + outFileName);
-
-        // Create a Parser object for the provided input file
+        System.out.println("Translating: " + inFileName);
+    
         try (BufferedReader br = new BufferedReader(new FileReader(inFileName))) {
             Parser parser = new Parser(br);
-
-            // Create a CodeWriter object
-            File outFile = new File(outFileName);
-            fileWriter = new FileWriter(outFile);
-            CodeWriter codeWriter = new CodeWriter(fileWriter);
-            codeWriter.setFileName(inFileName);
-
-            // Loop while the Parser object has more commands
+            codeWriter.setFileName(vmFile.getName()); // updates static labels for this file
+    
             while (parser.hasMoreCommands()) {
-
-                // advance through the command
                 parser.advance();
-
-                // and do something with the codeWriter depending on what it is
+    
                 switch (parser.commandType()) {
-
                     case 0 -> codeWriter.writePushPop("push", parser.arg1(), parser.arg2());
                     case 1 -> codeWriter.writePushPop("pop", parser.arg1(), parser.arg2());
                     case 2 -> codeWriter.writeArithmetic("add");
@@ -71,22 +80,18 @@ public class VMTranslator {
                     case 8 -> codeWriter.writeArithmetic("and");
                     case 9 -> codeWriter.writeArithmetic("or");
                     case 10 -> codeWriter.writeArithmetic("not");
-
-                    // Chapter 8
                     case 11 -> codeWriter.writeLabel(parser.arg1());
                     case 12 -> codeWriter.writeGoto(parser.arg1());
                     case 13 -> codeWriter.writeIf(parser.arg1());
                     case 14 -> codeWriter.writeCall(parser.arg1(), parser.arg2());
                     case 15 -> codeWriter.writeReturn();
                     case 16 -> codeWriter.writeFunction(parser.arg1(), parser.arg2());
-
-                    default -> System.out.println("Error: VMTranslator.java: translatefile(): Unknown Command Type (" + parser.commandType() + ")");
+                    default -> System.out.println("Unknown Command Type: " + parser.commandType());
                 }
             }
-
-            codeWriter.close();
         } catch (IOException e) {
             System.out.println("IOException: VMTranslator.translateFile()");
         }
     }
+    
 }

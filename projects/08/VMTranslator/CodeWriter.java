@@ -335,7 +335,7 @@ public class CodeWriter {
     }
 
     // Set the value of @SP to 256
-    private void writerInit() {
+    public void writerInit() {
         w("// writerInit");
         w("@256");
         w("D=A");
