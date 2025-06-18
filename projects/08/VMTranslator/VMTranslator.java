@@ -39,6 +39,8 @@ public class VMTranslator {
         String inFileName = vmFile.getAbsolutePath();
         String outFileName = inFileName.replace(".vm", ".asm");
 
+        System.out.println("File: " + outFileName);
+
         // Create a Parser object for the provided input file
         try (BufferedReader br = new BufferedReader(new FileReader(inFileName))) {
             Parser parser = new Parser(br);
@@ -74,11 +76,11 @@ public class VMTranslator {
                     case 11 -> codeWriter.writeLabel(parser.arg1());
                     case 12 -> codeWriter.writeGoto(parser.arg1());
                     case 13 -> codeWriter.writeIf(parser.arg1());
-                    case 14 -> codeWriter.writeCall("call", 5);
+                    case 14 -> codeWriter.writeCall(parser.arg1(), parser.arg2());
                     case 15 -> codeWriter.writeReturn();
-                    case 16 -> codeWriter.writeFunction("function", 5);
+                    case 16 -> codeWriter.writeFunction(parser.arg1(), parser.arg2());
 
-                    default -> System.out.println("Error: VMTranslator.java: translatefile(): Unknown Command Type");
+                    default -> System.out.println("Error: VMTranslator.java: translatefile(): Unknown Command Type (" + parser.commandType() + ")");
                 }
             }
 

@@ -36,6 +36,10 @@ public class Parser {
                     // Remove any leading whitespace from the current line
                     currentLine = currentLine.trim();
 
+                        if (currentLine.isBlank()) {
+                            continue; // Just learned about continues but the comments kept creeping through so i think i need it here
+                        }
+                        
                     return true;
                 }
             }
