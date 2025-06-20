@@ -17,7 +17,6 @@ public class CodeWriter {
 		This can be done by sending in a stream */
     public CodeWriter(FileWriter FW) {
         printWriter = FW;
-        writerInit();
     }
 
     // this is the write command that writes to the new file, but was shortened to 'w' so it could be typed fast
@@ -335,13 +334,28 @@ public class CodeWriter {
     }
 
     // Set the value of @SP to 256
-    public void writerInit() {
-        w("// writerInit");
+    public void writeInit() {
+        w("// writeInit");
         w("@256");
         w("D=A");
         w("@SP");
         w("M=D");
+    
+        w("@0");
+        w("D=A");
+        w("@LCL");
+        w("M=D");
+        w("@ARG");
+        w("M=D");
+        w("@THIS");
+        w("M=D");
+        w("@THAT");
+        w("M=D");
+    
+        w("@Sys.init");
+        w("0;JMP");
     }
+    
 
     public void writeLabel(String label) {
         w("// writeLabel " + label);

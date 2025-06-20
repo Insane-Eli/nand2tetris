@@ -1,4 +1,3 @@
-
 import java.io.*;
 
 public class VMTranslator {
@@ -6,69 +5,88 @@ public class VMTranslator {
     static FileWriter fileWriter;
     static int debugLevel = 10; // not sure if we need this but probably don't touch it
 
+    static File outputFile;
+    static File inputFile;
+    static CodeWriter codeWriter;
     public static void main(String args[]) {
-        String inputPath = args[0];
-        File inputFile = new File(inputPath);
+        String inFilePath = args[0];
+        inputFile = new File(inFilePath);
+    
+        String outputFileName;
     
         if (inputFile.isDirectory()) {
-            // Make one output .asm file named after the directory
-            String outputFileName = inputFile.getAbsolutePath() + "/" + inputFile.getName() + ".asm";
-    
-            try {
-                fileWriter = new FileWriter(outputFileName);
-                CodeWriter codeWriter = new CodeWriter(fileWriter);
-                codeWriter.writerInit(); // writes bootstrap code
-    
-                traverseDirectory(inputFile, codeWriter);
-    
-                codeWriter.close();
-            } catch (IOException e) {
-                System.out.println("Error writing output file");
-            }
+            // Handle directory input
+            outputFileName = inputFile.getAbsolutePath() + "/" + inputFile.getName() + ".asm";
         } else {
-            // One .vm file → one .asm file
-            String outputFileName = inputPath.replace(".vm", ".asm");
+            // Handle single file input
+            outputFileName = inputFile.getPath().replace(".vm", ".asm");
+        }
     
-            try {
-                fileWriter = new FileWriter(outputFileName);
-                CodeWriter codeWriter = new CodeWriter(fileWriter);
+        outputFile = new File(outputFileName); // create the outputFile BEFORE using it
     
-                translateFile(inputFile, codeWriter);
+        try {
+            fileWriter = new FileWriter(outputFile);
+            codeWriter = new CodeWriter(fileWriter);
+            codeWriter.writeInit();
+        } catch (IOException e) {
+            System.out.println("error");
+            return; // bail early if file creation fails
+        }
+        
+
+        if (inputFile.isDirectory()) {
+            traverseDirectory(inputFile);
+        } else {
+            translateFile(inputFile);
+        }
     
-                codeWriter.close();
-            } catch (IOException e) {
-                System.out.println("Error writing output file");
-            }
+        try {
+            codeWriter.close(); // close at the end of main
+        } catch (Exception e) {
+            System.out.println("still cooked ToT");
         }
     }
     
 
-    private static void traverseDirectory(File directory, CodeWriter codeWriter) {
+    private static void traverseDirectory(File directory) {
         File[] files = directory.listFiles();
         if (files != null) {
             for (File file : files) {
-                if (file.isDirectory()) {
-                    traverseDirectory(file, codeWriter);
-                } else if (file.getName().endsWith(".vm")) {
-                    translateFile(file, codeWriter);
+                if (file.isFile() && file.getName().equals("Sys.vm")) {
+                    translateFile(file);
+                }
+            }
+            for (File file : files) {
+                if (file.isFile() && file.getName().endsWith(".vm") && !file.getName().equals("Sys.vm")) {
+                    translateFile(file);
                 }
             }
         }
     }
     
+    
+    
+    
 
-    private static void translateFile(File vmFile, CodeWriter codeWriter) {
-        String inFileName = vmFile.getAbsolutePath();
-        System.out.println("Translating: " + inFileName);
-    
-        try (BufferedReader br = new BufferedReader(new FileReader(inFileName))) {
+    private static void translateFile(File vmFile) {
+        // Create a Parser object for the provided input file
+        try (BufferedReader br = new BufferedReader(new FileReader(vmFile))) {
+            
             Parser parser = new Parser(br);
-            codeWriter.setFileName(vmFile.getName()); // updates static labels for this file
-    
+
+            codeWriter.setFileName(vmFile.getName().replace(".vm", ""));
+            
+            System.out.println("Translating: " + vmFile.getName());
+
+            // Loop while the Parser object has more commands
             while (parser.hasMoreCommands()) {
+
+                // advance through the command
                 parser.advance();
-    
+
+                // and do something with the codeWriter depending on what it is
                 switch (parser.commandType()) {
+
                     case 0 -> codeWriter.writePushPop("push", parser.arg1(), parser.arg2());
                     case 1 -> codeWriter.writePushPop("pop", parser.arg1(), parser.arg2());
                     case 2 -> codeWriter.writeArithmetic("add");
@@ -80,18 +98,21 @@ public class VMTranslator {
                     case 8 -> codeWriter.writeArithmetic("and");
                     case 9 -> codeWriter.writeArithmetic("or");
                     case 10 -> codeWriter.writeArithmetic("not");
+
+                    // Chapter 8
                     case 11 -> codeWriter.writeLabel(parser.arg1());
                     case 12 -> codeWriter.writeGoto(parser.arg1());
                     case 13 -> codeWriter.writeIf(parser.arg1());
                     case 14 -> codeWriter.writeCall(parser.arg1(), parser.arg2());
                     case 15 -> codeWriter.writeReturn();
                     case 16 -> codeWriter.writeFunction(parser.arg1(), parser.arg2());
-                    default -> System.out.println("Unknown Command Type: " + parser.commandType());
+
+                    default -> System.out.println("Error: VMTranslator.java: translatefile(): Unknown Command Type (" + parser.commandType() + ")");
                 }
             }
+
         } catch (IOException e) {
             System.out.println("IOException: VMTranslator.translateFile()");
         }
     }
-    
 }
