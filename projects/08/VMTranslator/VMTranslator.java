@@ -8,38 +8,26 @@ public class VMTranslator {
     static File outputFile;
     static File inputFile;
     static CodeWriter codeWriter;
-    public static void main(String args[]) {
-        String inFilePath = args[0];
-        inputFile = new File(inFilePath);
-    
-        String outputFileName;
-    
-        if (inputFile.isDirectory()) {
-            // Handle directory input
-            outputFileName = inputFile.getAbsolutePath() + "/" + inputFile.getName() + ".asm";
-        } else {
-            // Handle single file input
-            outputFileName = inputFile.getPath().replace(".vm", ".asm");
-        }
-    
-        outputFile = new File(outputFileName); // create the outputFile BEFORE using it
-    
-        try {
-            fileWriter = new FileWriter(outputFile);
-            codeWriter = new CodeWriter(fileWriter);
+   public static void main(String args[]) {
+    String inFilePath = args[0];
+    inputFile = new File(inFilePath);
 
-            if (inputFile.isDirectory()){
-                    codeWriter.writeInit();
-            }
+    String outputFileName;
 
-        } catch (IOException e) {
-            System.out.println("error");
-            return; // bail early if file creation fails
-        }
-        
+    if (inputFile.isDirectory()) {
+        outputFileName = inputFile.getAbsolutePath() + "/" + inputFile.getName() + ".asm";
+    } else {
+        outputFileName = inputFile.getPath().replace(".vm", ".asm");
+    }
+
+    outputFile = new File(outputFileName);
+
+    try {
+        fileWriter = new FileWriter(outputFile);
+        codeWriter = new CodeWriter(fileWriter);
 
         if (inputFile.isDirectory()) {
-            codeWriter.writeInit();
+            bootstrapBuddy(inputFile);
             traverseDirectory(inputFile);
         } else {
             if(inputFile.getName().equals("Sys.vm")){
@@ -47,25 +35,30 @@ public class VMTranslator {
             }
             translateFile(inputFile);
         }
-    
-        try {
-            codeWriter.close(); // close at the end of main
-        } catch (Exception e) {
-            System.out.println("still cooked ToT");
+
+        codeWriter.close();
+    } catch (IOException e) {
+        System.out.println("error");
+    }
+}
+
+    private static void bootstrapBuddy(File directory){
+        File[] files = directory.listFiles();
+        if (files != null) {
+            for (File file : files) {
+                if (file.isFile() && file.getName().equals("Sys.vm")) {
+                    codeWriter.writeInit();  // bootstrap called once at start
+                    break;
+                }
+            }
         }
     }
-    
 
     private static void traverseDirectory(File directory) {
         File[] files = directory.listFiles();
         if (files != null) {
             for (File file : files) {
-                if (file.isFile() && file.getName().equals("Sys.vm")) {
-                    translateFile(file);
-                }
-            }
-            for (File file : files) {
-                if (file.isFile() && file.getName().endsWith(".vm") && !file.getName().equals("Sys.vm")) {
+                if (file.isFile() && file.getName().endsWith(".vm")) {
                     translateFile(file);
                 }
             }
