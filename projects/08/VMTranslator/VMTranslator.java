@@ -27,7 +27,11 @@ public class VMTranslator {
         try {
             fileWriter = new FileWriter(outputFile);
             codeWriter = new CodeWriter(fileWriter);
-            codeWriter.writeInit();
+
+            if (inputFile.isDirectory()){
+                    codeWriter.writeInit();
+            }
+
         } catch (IOException e) {
             System.out.println("error");
             return; // bail early if file creation fails
@@ -35,8 +39,12 @@ public class VMTranslator {
         
 
         if (inputFile.isDirectory()) {
+            codeWriter.writeInit();
             traverseDirectory(inputFile);
         } else {
+            if(inputFile.getName().equals("Sys.vm")){
+                codeWriter.writeInit();
+            }
             translateFile(inputFile);
         }
     
@@ -63,8 +71,6 @@ public class VMTranslator {
             }
         }
     }
-    
-    
     
     
 
