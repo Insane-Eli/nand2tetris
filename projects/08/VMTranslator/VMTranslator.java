@@ -47,7 +47,7 @@ public class VMTranslator {
         if (files != null) {
             for (File file : files) {
                 if (file.isFile() && file.getName().equals("Sys.vm")) {
-                    codeWriter.writeInit();  // bootstrap called once at start
+                    codeWriter.writeInit();  // bootstrap called once at start ONLY IF THERES A Sys.vm FILE
                     break;
                 }
             }

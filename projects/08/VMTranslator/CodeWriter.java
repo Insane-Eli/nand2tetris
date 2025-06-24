@@ -333,133 +333,52 @@ public class CodeWriter {
         }
     }
 
-    // // Set the value of @SP to 256
-    // public void writeInit() {
-    //     w("// writeInit");
-    //     w("@256");
-    //     w("D=A");
-    //     w("@SP");
-    //     w("M=D");
-    
-    //     w("@Sys.init");
-    //     w("0;JMP");
-    // }
 
-//     public void writeInit() {
-//     w("// writeInit");
-//     w("@256");
-//     w("D=A");
-//     w("@SP");
-//     w("M=D");
 
-//     // Call Sys.init with 0 arguments, like their Python does:
-//     // Push return-address
-//     String returnLabel = "Sys.init$ret.0";
-//     w("@" + returnLabel);
-//     w("D=A");
-//     w("@SP");
-//     w("M=M+1");
-//     w("A=M-1");
-//     w("M=D");
+    public void writeInit() {
+        w("// writeInit");
+        w("@256");
+        w("D=A");
+        w("@SP");
+        w("M=D");
 
-//     // Push LCL
-//     w("@LCL");
-//     w("D=M");
-//     w("@SP");
-//     w("M=M+1");
-//     w("A=M-1");
-//     w("M=D");
+        final String returnLabel = "Sys.init$ret.0";
 
-//     // Push ARG
-//     w("@ARG");
-//     w("D=M");
-//     w("@SP");
-//     w("M=M+1");
-//     w("A=M-1");
-//     w("M=D");
+        // push return address
+        w("@" + returnLabel);
+        w("D=A");
+        w("@SP");
+        w("M=M+1");
+        w("A=M-1");
+        w("M=D");
 
-//     // Push THIS
-//     w("@THIS");
-//     w("D=M");
-//     w("@SP");
-//     w("M=M+1");
-//     w("A=M-1");
-//     w("M=D");
+        // push LCL, ARG, THIS, THAT
+        push("@LCL");
+        push("@ARG");
+        push("@THIS");
+        push("@THAT");
 
-//     // Push THAT
-//     w("@THAT");
-//     w("D=M");
-//     w("@SP");
-//     w("M=M+1");
-//     w("A=M-1");
-//     w("M=D");
+        // ARG = SP - 5 - 0
+        w("@SP");
+        w("D=M");
+        w("@5");
+        w("D=D-A");
+        w("@ARG");
+        w("M=D");
 
-//     // ARG = SP - 5 - 0
-//     w("@SP");
-//     w("D=M");
-//     w("@5");
-//     w("D=D-A");
-//     w("@ARG");
-//     w("M=D");
+        // LCL = SP
+        w("@SP");
+        w("D=M");
+        w("@LCL");
+        w("M=D");
 
-//     // LCL = SP
-//     w("@SP");
-//     w("D=M");
-//     w("@LCL");
-//     w("M=D");
+        // go to Sys.init
+        w("@Sys.init");
+        w("0;JMP");
 
-//     // Goto Sys.init
-//     w("@Sys.init");
-//     w("0;JMP");
-
-//     // Return label
-//     w("(" + returnLabel + ")");
-// }
-
-public void writeInit() {
-    w("// writeInit");
-    w("@256");
-    w("D=A");
-    w("@SP");
-    w("M=D");
-
-    String returnLabel = "Sys.init$ret.0";
-
-    // Push return address
-    w("@" + returnLabel);
-    w("D=A");
-    w("@SP");
-    w("M=M+1");
-    w("A=M-1");
-    w("M=D");
-
-    // Push LCL, ARG, THIS, THAT
-    push("@LCL");
-    push("@ARG");
-    push("@THIS");
-    push("@THAT");
-
-    // ARG = SP - 5 - 0
-    w("@SP");
-    w("D=M");
-    w("@5");
-    w("D=D-A");
-    w("@ARG");
-    w("M=D");
-
-    // LCL = SP
-    w("@SP");
-    w("D=M");
-    w("@LCL");
-    w("M=D");
-
-    // goto Sys.init
-    w("@Sys.init");
-    w("0;JMP");
-
-    // return label
-    w("(" + returnLabel + ")");
-}
+        // return label
+        w("(" + returnLabel + ")");
+    }
 
     
 
