@@ -342,42 +342,7 @@ public class CodeWriter {
         w("@SP");
         w("M=D");
 
-        final String returnLabel = "Sys.init$ret.0";
-
-        // push return address
-        w("@" + returnLabel);
-        w("D=A");
-        w("@SP");
-        w("M=M+1");
-        w("A=M-1");
-        w("M=D");
-
-        // push LCL, ARG, THIS, THAT
-        push("@LCL");
-        push("@ARG");
-        push("@THIS");
-        push("@THAT");
-
-        // ARG = SP - 5 - 0
-        w("@SP");
-        w("D=M");
-        w("@5");
-        w("D=D-A");
-        w("@ARG");
-        w("M=D");
-
-        // LCL = SP
-        w("@SP");
-        w("D=M");
-        w("@LCL");
-        w("M=D");
-
-        // go to Sys.init
-        w("@Sys.init");
-        w("0;JMP");
-
-        // return label
-        w("(" + returnLabel + ")");
+        writeCall("Sys.init", 0);
     }
 
     
