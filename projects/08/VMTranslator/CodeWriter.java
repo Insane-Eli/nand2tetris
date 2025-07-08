@@ -336,6 +336,8 @@ public class CodeWriter {
 
 
     public void writeInit() {
+
+        // set stack pointer to 256
         w("// writeInit");
         w("@256");
         w("D=A");
