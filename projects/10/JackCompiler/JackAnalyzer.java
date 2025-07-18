@@ -2,16 +2,16 @@
 public class JackAnalyzer {
     public static void main(String[] args) {
         String sourceFileName = args[0];
-        String outputFileName = sourceFileName.replace(".jack", ".xml");
+        String outputFileName = sourceFileName.replace(".jack", "ELI.xml");
 
 		try{
 			CompilationEngine engine = new CompilationEngine(sourceFileName, outputFileName);
+			System.out.println();
 		} catch (Exception e){
 			System.out.println("JackAnalyzer.main() error");
 		}
     }
 }
-
 
 // /** The analyzer program operates on a given source, where source is either a file name of the form 
 // 	Xxx.jack or a directory name containing one or more such files. For each source Xxx.jack file, 

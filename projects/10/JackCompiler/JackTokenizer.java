@@ -17,14 +17,15 @@ generates executable VM code. In both cases, the parsing logic and module API ar
 
 */
 
-class JackTokenizer {
+public class JackTokenizer {
 
 	public void debug() {
-    	System.out.println("Token: " + currentToken + " | Type: " + currentType);
+    	System.out.println("\ttoken: " + currentToken + ", type: " + currentType);
 	}
 
     private String input;
     private int cursor;
+	private String currentLine;
 
 	/* Declare state variables for storing the tokenType, currentIdentifier, currentInteger
 		currentString and currentKeyword
@@ -72,13 +73,16 @@ class JackTokenizer {
 
 			BufferedReader br = new BufferedReader(inputFile);
 			List<String> lines = new ArrayList<String>();
-			String currentLine = "";
+			currentLine = "";
 
 			while ((currentLine = br.readLine()) != null){
 				input += currentLine + "\n";
+				System.out.println("current line: " + currentLine);;
 			}
 
 			br.close();
+
+			System.out.println("compilation finished");
 
 		} catch (IOException e){
 			System.out.print("jack tokenizer constructor error: " + e);
@@ -111,12 +115,15 @@ class JackTokenizer {
 
 			// Skip multi-line comments. Set ML-comment mode and keep advancing cursors until 
 			// the "*/" delimiter is found.
-			if (c == '/' && cursor + 1 < input.length() && input.charAt(cursor + 1) == '*') {
+			if (c == '/' && cursor + 1 < input.length() && input.charAt(cursor + 1) == '*') { // if "/*"
 				cursor += 2;
-				while (cursor + 1 < input.length() && !(input.charAt(cursor) == '*' && input.charAt(cursor + 1) == '/')) {
+				if(input.charAt(cursor) == '*'){ // if "/**"
 					cursor++;
 				}
-				cursor += 2; // skip closing */
+				while (cursor + 1 < input.length() && !(input.charAt(cursor) == '*' && input.charAt(cursor + 1) == '/')) { // wait for "*/"
+					cursor++;
+				}
+				cursor += 2;
 				continue;
 			}
 		
@@ -137,7 +144,7 @@ class JackTokenizer {
 
 
 	public void advance() {
-
+		if(!hasMoreTokens()){return;}
 		if (cursor>= input.length()){
 			return;
 		}
@@ -174,7 +181,10 @@ class JackTokenizer {
 			return;
 		}
 
+
+
 		// default (should never happen)
+		System.out.println("NO KEYWORD FOUND, DEFAULT CASE, ERROR ERROR ERROR, cursor: " + cursor);
 		cursor++;
 		}
 	
@@ -282,7 +292,8 @@ class JackTokenizer {
 		if (currentType == Type.KEYWORD) {
         	return currentToken;
     	} else {
-			System.out.println("current token != keyword");
+			System.out.println("ERROR: current token != keyword");
+			debug();
 			return "0";
 		}
 	}
@@ -291,7 +302,8 @@ class JackTokenizer {
 		if (currentType == Type.SYMBOL && currentToken.length() == 1) {
         	return currentToken.charAt(0);
     	} else {
-			System.out.println("current token != symbol OR isn't length 1");
+			System.out.println("ERROR: current token != symbol OR isn't length 1");
+			debug();
 			return '0';
 		}
 	}
@@ -300,7 +312,8 @@ class JackTokenizer {
 		if (currentType == Type.IDENTIFIER) {
         	return currentToken;
     	} else {
-			System.out.println("current token != identifier");
+			System.out.println("ERROR: current token != identifier");
+			debug();
 			return "0";
 		}
 	}
@@ -309,7 +322,8 @@ class JackTokenizer {
 		if (currentType == Type.INT_CONSTANT) {
         	return Integer.parseInt(currentToken);
     	} else {
-			System.out.println("current token != int constant");
+			System.out.println("ERROR: current token != int constant");
+			debug();
 			return 0;
 		}
 	}
@@ -318,7 +332,8 @@ class JackTokenizer {
 		if (currentType == Type.STRING_CONSTANT) {
         	return currentToken;
     	} else {
-			System.out.println("current token != string constant");
+			System.out.println("ERROR: current token != string constant");
+			debug();
 			return "0";
 		}
 	}

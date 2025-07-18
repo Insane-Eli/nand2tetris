@@ -14,11 +14,14 @@ import java.io.*;
 			about half capitalizing the first letter and half leaving it lower-case.
 			We will use strict camel-case.  **/
 
-class CompilationEngine {
+public class CompilationEngine {
 
 	private JackTokenizer tokenizer;
 	private BufferedWriter writer;
-
+	
+	public void debug(String keyword){
+		System.out.println("\tkeyword: " + keyword);
+	}
 	
 
 	/** The CompilationEngine will create a new JackTokenizer object based on the
@@ -45,6 +48,15 @@ class CompilationEngine {
 		} catch (Exception e){
 			System.out.println("w() error: " + e);
 		}
+	}
+
+	public String comparisonSwitch(char token) {
+		return switch(token){
+			case '&' -> "&amp;";
+			case '<' -> "&lt;";
+			case '>' -> "&gt;";
+			default -> ""+token;
+		};
 	}
 
 	/** compileClass() is the only public method. All other methods are called
@@ -80,7 +92,8 @@ class CompilationEngine {
 				w("<symbol> } </symbol>");
 				break;
 			} else {
-				System.out.print("compile class loop error");
+				System.out.println("compile class loop error");
+				debug(keyword);
 				break;
 			}
 		}
@@ -102,7 +115,6 @@ class CompilationEngine {
 	private void compileClassVarDec() {
 		// classVarDec:	('static' | 'field') type varName (',' vaName)* ';'
 		w("<classVarDec>");
-
 		w("<keyword> " + tokenizer.keyWord() + " </keyword>"); // either static or field
     	tokenizer.advance();
 
@@ -229,7 +241,7 @@ class CompilationEngine {
 	
 	private void compileVarDec() {
 		// varDec:	'var' type varName (',' type varName)*)?
-
+		w("<varDec>");
 		w("<keyword> var </keyword>");
     	tokenizer.advance();
 
@@ -256,6 +268,7 @@ class CompilationEngine {
 		w("<symbol> ; </symbol>");
 		tokenizer.advance();
 
+		w("</varDec>");
 	}
 	
 	private void compileStatements() {
@@ -473,15 +486,22 @@ class CompilationEngine {
 
 		w("</ifStatement>");
 	}
-	
-	// ! chapter 11 stuff?!
 
 
 	private void compileExpression() {
 		// expression:	term (op term)*
+		w("<expression>");
+		compileTerm();
+	
+		while (tokenizer.tokenType() == JackTokenizer.Type.SYMBOL && "+-*/&|<>=".indexOf(tokenizer.symbol()) != -1) {
+			w("<symbol> " + comparisonSwitch(tokenizer.symbol()) + " </symbol>");
+			tokenizer.advance();
+			compileTerm();
+		}
+	
+		w("</expression>");
 		
 	}
-	
 	/** Near the end of section 10.1.3, it is mentioned that the Jack grammer is
 		"almost" LL(0). The exception being that lookahead is required for the
 		parsing of expressions. Specifically, a subroutineCall starts with an identifier
@@ -494,10 +514,88 @@ class CompilationEngine {
 		//			varName | varName '[' expression ']' | subroutineCall |
 		//			'(' expression ')' | unaryOp term
 		
+		w("<term>");
+
+		if (tokenizer.tokenType() == JackTokenizer.Type.INT_CONSTANT) {
+			w("<integerConstant> " + tokenizer.intVal() + " </integerConstant>");
+			tokenizer.advance();
+	
+		} else if (tokenizer.tokenType() == JackTokenizer.Type.STRING_CONSTANT) {
+			w("<stringConstant> " + tokenizer.stringVal() + " </stringConstant>");
+			tokenizer.advance();
+	
+		} else if (tokenizer.tokenType() == JackTokenizer.Type.KEYWORD) {
+			w("<keyword> " + tokenizer.keyWord() + " </keyword>");
+			tokenizer.advance();
+	
+		} else if (tokenizer.tokenType() == JackTokenizer.Type.SYMBOL &&
+				   (tokenizer.symbol() == '-' || tokenizer.symbol() == '~')) {
+			w("<symbol> " + tokenizer.symbol() + " </symbol>");
+			tokenizer.advance();
+			compileTerm();
+	
+		} else if (tokenizer.tokenType() == JackTokenizer.Type.SYMBOL &&
+				   tokenizer.symbol() == '(') {
+			w("<symbol> ( </symbol>");
+			tokenizer.advance();
+			compileExpression();
+			w("<symbol> ) </symbol>");
+			tokenizer.advance();
+	
+		} else if (tokenizer.tokenType() == JackTokenizer.Type.IDENTIFIER) {
+			w("<identifier> " + tokenizer.identifier() + " </identifier>");
+			tokenizer.advance();
+	
+			if (tokenizer.tokenType() == JackTokenizer.Type.SYMBOL) {
+				if (tokenizer.symbol() == '[') {
+					w("<symbol> [ </symbol>");
+					tokenizer.advance();
+					compileExpression();
+					w("<symbol> ] </symbol>");
+					tokenizer.advance();
+	
+				} else if (tokenizer.symbol() == '(') {
+					w("<symbol> ( </symbol>");
+					tokenizer.advance();
+					compileExpressionList();
+					w("<symbol> ) </symbol>");
+					tokenizer.advance();
+	
+				} else if (tokenizer.symbol() == '.') {
+					w("<symbol> . </symbol>");
+					tokenizer.advance();
+	
+					w("<identifier> " + tokenizer.identifier() + " </identifier>");
+					tokenizer.advance();
+	
+					w("<symbol> ( </symbol>");
+					tokenizer.advance();
+	
+					compileExpressionList();
+	
+					w("<symbol> ) </symbol>");
+					tokenizer.advance();
+				}
+			}
+		}
+	
+		w("</term>");
 	}
 	
 	private void compileExpressionList() {
 		// expressionList:	( expression (',' expression)* )?
+			w("<expressionList>");
 		
+			if (!(tokenizer.tokenType() == JackTokenizer.Type.SYMBOL && tokenizer.symbol() == ')')) {
+				compileExpression();
+		
+				while (tokenizer.tokenType() == JackTokenizer.Type.SYMBOL && tokenizer.symbol() == ',') {
+					w("<symbol> , </symbol>");
+					tokenizer.advance();
+					compileExpression();
+				}
+			}
+		
+			w("</expressionList>");
 	}
 }
