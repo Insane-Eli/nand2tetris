@@ -88,16 +88,13 @@ public class CompilationEngine {
 				compileClassVarDec();
 			} else if (keyword.equals("constructor") || keyword.equals("function") || keyword.equals("method")) {
 				compileSubroutine();
-			} else if (keyword.equals("}")) {
-				w("<symbol> } </symbol>");
-				break;
 			} else {
-				System.out.println("compile class loop error");
-				debug(keyword);
+				// end of file
 				break;
 			}
 		}
 
+		w("<symbol> } </symbol>");
 		w("</class>");
 
 		/* The general procedure for any "compile" method is to handle each terminal
@@ -215,11 +212,11 @@ public class CompilationEngine {
 			}
 			tokenizer.advance();
 
-			// first varName
+			// first variable
 			w("<identifier> " + tokenizer.identifier() + " </identifier>");
 			tokenizer.advance();
 
-			// additional ", type name"'s
+			// additional variables ", (type) (name)"s
 			while (tokenizer.tokenType() == JackTokenizer.Type.SYMBOL && tokenizer.symbol() == ',') {
 				w("<symbol> , </symbol>");
 				tokenizer.advance();
@@ -493,7 +490,7 @@ public class CompilationEngine {
 		w("<expression>");
 		compileTerm();
 	
-		while (tokenizer.tokenType() == JackTokenizer.Type.SYMBOL && "+-*/&|<>=".indexOf(tokenizer.symbol()) != -1) {
+		while (tokenizer.tokenType() == JackTokenizer.Type.SYMBOL && isValidSymbol(tokenizer.symbol())) {
 			w("<symbol> " + comparisonSwitch(tokenizer.symbol()) + " </symbol>");
 			tokenizer.advance();
 			compileTerm();
@@ -501,6 +498,10 @@ public class CompilationEngine {
 	
 		w("</expression>");
 		
+	}
+
+	private boolean isValidSymbol(char c){
+		return "+-*/&|<>=".indexOf(c) != -1;
 	}
 	/** Near the end of section 10.1.3, it is mentioned that the Jack grammer is
 		"almost" LL(0). The exception being that lookahead is required for the

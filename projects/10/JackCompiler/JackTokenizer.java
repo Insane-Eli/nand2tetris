@@ -1,5 +1,4 @@
 import java.io.*;
-import java.util.*;
 /* 
 
 Effects the actual compilation output.
@@ -54,13 +53,13 @@ public class JackTokenizer {
 		'<', '>', '=', '~'
 	};
 
-	private static final String integerChars = "0123456789";
+	private static final String validIntChars = "0123456789";
 
 	// first character of an identifier must be a letter or underscore
-	private static final String identifierStartChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_";
+	private static final String validIdentifierStartChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_";
 
 	// after the first char, everything else is viable
-	private static final String identifierChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_0123456789";
+	private static final String validIdentifierChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_0123456789";
 
 	/** The constructor will open the inputFile and read all of the lines into
 		an array for processing. The file can then be closed. **/
@@ -72,7 +71,6 @@ public class JackTokenizer {
 		try {
 
 			BufferedReader br = new BufferedReader(inputFile);
-			List<String> lines = new ArrayList<String>();
 			currentLine = "";
 
 			while ((currentLine = br.readLine()) != null){
@@ -127,7 +125,7 @@ public class JackTokenizer {
 				continue;
 			}
 		
-		return true;
+			return true;
 		}
 
 		// We know that we are either at the end of the file or the start of a valid token
@@ -164,7 +162,7 @@ public class JackTokenizer {
 			}
 		}
 		// digit
-		if (integerChars.indexOf(c) != -1) {
+		if (validIntChars.indexOf(c) != -1) {
 			parseInt();
 			return;
 		}
@@ -176,7 +174,7 @@ public class JackTokenizer {
 		}
 
 		// identifier
-		if (identifierStartChars.indexOf(c) != -1) {
+		if (validIdentifierStartChars.indexOf(c) != -1) {
 			currentToken = parseIdentifier();
 			return;
 		}
@@ -201,7 +199,7 @@ public class JackTokenizer {
 
 		// Walk through each character. As long as we have an integer value, accumulate
 		// the value into the current int state variable
-		while (cursor < input.length() && integerChars.indexOf(input.charAt(cursor)) != -1) {
+		while (cursor < input.length() && validIntChars.indexOf(input.charAt(cursor)) != -1) {
 			number += input.charAt(cursor);
 			cursor++;
 		}
@@ -217,7 +215,7 @@ public class JackTokenizer {
 
 		// Walk through each character. As long as we have a valid character, append it
 		// to a string holder. 
-		while(cursor < input.length() && identifierChars.indexOf(input.charAt(cursor)) != -1){
+		while(cursor < input.length() && validIdentifierChars.indexOf(input.charAt(cursor)) != -1){
 			str += input.charAt(cursor);
 			cursor++;
 		}
