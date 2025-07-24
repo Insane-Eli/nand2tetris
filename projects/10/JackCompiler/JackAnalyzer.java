@@ -1,6 +1,6 @@
 
 // single file placeholder
-//
+
 // public class JackAnalyzer {
 //     public static void main(String[] args) {
 //         String sourceFileName = args[0];
@@ -74,42 +74,37 @@ class JackAnalyzer {
 		object and advance through every token. For each token, print out a line
 		of XML output as defined in Section 10.5 Stage 1.
 			*/ 
-	private static void processTokenizer (String sourceFilename, String outputFilename) {
+	private static void processTokenizer (String sourceFileName, String outputFileName) {
+
 		try{
+			CompilationEngine engine = new CompilationEngine(sourceFileName, outputFileName);
+			System.out.println();
+		} 
 
-		// Create a tokenizer based on the source file
-		FileReader reader = new FileReader(sourceFilename);
-		JackTokenizer jt = new JackTokenizer(reader);
+		// try{
 
-		// Create a new file for the output
-		File outputFile = new File(outputFilename);
+		// // Create a tokenizer based on the source file
+		// FileReader reader = new FileReader(sourceFilename);
+		// JackTokenizer jt = new JackTokenizer(reader);
 
-		// For every token, print the XML output to the output file
-		FileWriter fw = new FileWriter(outputFile);
-		w("<tokens>");
+		// // Create a new file for the output
+		// File outputFile = new File(outputFilename);
 
-		while(jt.hasMoreTokens()){
-			jt.advance();
-			printToken(jt);
-		}
+		// // For every token, print the XML output to the output file
+		// FileWriter fw = new FileWriter(outputFile);
 
-		// Close the output file
-		w("</tokens>");
-		fw.close();
+		// while(jt.hasMoreTokens()){
+		// 	jt.advance();
+		// 	printToken(jt);
+		// }
 
-		} catch (Exception e){
-			System.out.println("JackAnalyzer.processTokenizer(): " + e);
+		// // Close the output file
+		// fw.close();
+
+		catch (Exception e){
+			System.out.println("JackAnalyzer.processTokenizer() error");
 		}
 	}
-
-	private static void w(String s){
-		try{
-			fw.write(s);
-		} catch (Exception e){
-			System.out.println("JackAnalyzer.w() error");
-		}
-	}
-
 	
 	private static void printToken(JackTokenizer jc) {
 		// Print the opening tag based on the token type

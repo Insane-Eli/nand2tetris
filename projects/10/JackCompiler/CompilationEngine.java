@@ -1,6 +1,9 @@
+
 import java.io.*;
 
-/** CompilationEngine will serve as the focus for most of the compilers functionality.
+/** 
+ * @author tha one and only TOP SHOTTA Eli "Insane Eli" Currah (fan-made name)
+    CompilationEngine will serve as the focus for most of the compilers functionality.
 	Based on the grammar delineated in section 10.3.3, each method will output XML
 	and make appropriate calls to other methods. This recursive process means that 
 	the caller only needs to call compileClass for each file and all other compilations 
@@ -18,19 +21,24 @@ public class CompilationEngine {
 
 	private JackTokenizer tokenizer;
 	private BufferedWriter writer;
-	
+	private boolean oneTime;
+
+
 	public void debug(String keyword){
 		System.out.println("\tkeyword: " + keyword);
 	}
 	
 
-	/** The CompilationEngine will create a new JackTokenizer object based on the
+	/** @param input Jack file
+	 * The CompilationEngine will create a new JackTokenizer object based on the
 		inputFile and will create an output stream to outputFile. **/
 	public CompilationEngine (String inputFile, String outputFile){
 	    try {
 			tokenizer = new JackTokenizer(new FileReader(inputFile));
 			writer = new BufferedWriter(new FileWriter(outputFile));
+			oneTime = true;
 			compileClass();
+			writer.write("\n<!-- ELI'S TRANSLATED FILE BTW -->");
 			writer.close(); // TEMPORARY
 		} catch (IOException e) {
 			System.out.println("error compilation engine constructor: " + e);
@@ -44,7 +52,9 @@ public class CompilationEngine {
 
 	private void w(String s){
 		try{
-			writer.write(s + "\n");
+			writer.write(s);
+
+			writer.write("\n");
 		} catch (Exception e){
 			System.out.println("w() error: " + e);
 		}
@@ -92,6 +102,7 @@ public class CompilationEngine {
 				// end of file
 				break;
 			}
+
 		}
 
 		w("<symbol> } </symbol>");
