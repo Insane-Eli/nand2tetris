@@ -20,6 +20,7 @@ public class CompilationEngine {
 
     private JackTokenizer tokenizer;
     private BufferedWriter writer;
+    private String className;
 
     public void debug(String keyword) {
         System.out.println("\tkeyword: " + keyword);
@@ -57,65 +58,49 @@ public class CompilationEngine {
         }
     }
 
-    public String comparisonSwitch(char token) {
-        return switch (token) {
-            case '&' -> "&amp;";
-            case '<' -> "&lt;";
-            case '>' -> "&gt;";
-            default -> "" + token;
-        };
-    }
-
     /**
      * compileClass() is the only public method. All other methods are called
      * using recursive descent parsing. *
      */
     public void compileClass() {
-		
-        // class:	'class' className '{' classVarDec* subroutine* '}'
-
-        w("<class>");
-
         // 'class'
         tokenizer.advance();
-        w("<keyword> class </keyword>");
-
+        
         // className
         tokenizer.advance();
-        w("<identifier> " + tokenizer.identifier() + " </identifier>");
+        className = tokenizer.identifier(); // save class name for later
 
         // '{'
         tokenizer.advance();
-        w("<symbol> { </symbol>");
 
+        // classVarDec (static | field)
         tokenizer.advance();
-        OUTER:
-        while (true) {
-            String keyword = tokenizer.keyWord();
-            switch (keyword) {
-                case "static", "field" -> compileClassVarDec();
-                case "constructor", "function", "method" -> compileSubroutine();
-                default -> {
-                    // end of file
-                    break OUTER;
-                }
-            }
+        while (tokenizer.tokenType() == JackTokenizer.Type.KEYWORD && (tokenizer.keyWord().equals("static") || tokenizer.keyWord().equals("field"))) {
+            compileClassVarDec();
+            tokenizer.advance();
         }
 
-        w("<symbol> } </symbol>");
-        w("</class>");
+        // subroutineDec (constructor | function | method)
+        while (tokenizer.tokenType() == JackTokenizer.Type.KEYWORD && (tokenizer.keyWord().equals("constructor") || tokenizer.keyWord().equals("function") || tokenizer.keyWord().equals("method"))) {
+            compileSubroutine();
+            tokenizer.advance();
+        }
 
+        // '}'
+        tokenizer.advance();
+        
         /* The general procedure for any "compile" method is to handle each terminal
-			in order according to the Jack grammar. When a non-terminal is encountered,
-			a method is to be called to handle that.
-			
-			ie: In this method, we should encounter 3 terminals (the keyword "class",
-			an identifier and the symbol '{'). We will next see a keyword related
-			to classVarDec ("static" or "field") or a keyword related to subroutines
-			("constructor", "function" or "method"). We loop calling compileClassVarDec()
-			until we have subroutine keywords and loop calling compileSubroutine().
-			We look for the closing '}', close the output file and return.  */
+        in order according to the Jack grammar. When a non-terminal is encountered,
+        a method is to be called to handle that.
+        
+        ie: In this method, we should encounter 3 terminals (the keyword "class",
+        an identifier and the symbol '{'). We will next see a keyword related
+        to classVarDec ("static" or "field") or a keyword related to subroutines
+        ("constructor", "function" or "method"). We loop calling compileClassVarDec()
+        until we have subroutine keywords and loop calling compileSubroutine().
+        We look for the closing '}', close the output file and return.  */
     }
+
 
     private void compileClassVarDec() {
         // classVarDec:	('static' | 'field') type varName (',' vaName)* ';'
@@ -490,6 +475,15 @@ public class CompilationEngine {
 
         w("</expression>");
 
+    }
+
+    public String comparisonSwitch(char token) {
+        return switch (token) {
+            case '&' -> "&amp;";
+            case '<' -> "&lt;";
+            case '>' -> "&gt;";
+            default -> "" + token;
+        };
     }
 
     private boolean isValidSymbol(char c) {
