@@ -1,4 +1,4 @@
-import java.util.Hashtable;
+import java.util.*;
 
 public class SymbolTable {
 
@@ -51,25 +51,23 @@ public class SymbolTable {
     public void Define(String name, String type, VarKind kind){
         VarData d;
         switch(kind){
-            case STATIC:
+            case STATIC -> {
                 d = new VarData(type, kind, staticCount++);
                 classVars.put(name, d);
-                break;
-            case FIELD:
+            }
+            case FIELD -> {
                 d = new VarData(type, kind, fieldCount++);
                 classVars.put(name, d);
-                break;
-            case ARG:
+            }
+            case ARG -> {
                 d = new VarData(type, kind, argCount++);
                 subroutineVars.put(name, d);
-                break;
-            case VAR:
+            }
+            case VAR -> {
                 d = new VarData(type, kind, varCount++);
                 subroutineVars.put(name, d);
-                break;
-            default:
-                System.out.println("somthing messed up :|");
-                break;
+            }
+            default -> System.out.println("somthing messed up :|");
         }
     }
 
