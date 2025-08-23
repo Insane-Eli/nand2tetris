@@ -20,6 +20,8 @@ public class CompilationEngine {
 
     private JackTokenizer tokenizer;
     private BufferedWriter writer;
+    private SymbolTable st;
+    private VMWriter vmw;
     private String className;
 
     public void debug(String keyword) {
@@ -36,6 +38,8 @@ public class CompilationEngine {
             tokenizer = new JackTokenizer(new FileReader(inputFile));
             writer = new BufferedWriter(new FileWriter(outputFile));
             compileClass();
+            st = new SymbolTable();
+            vmw = new VMWriter(outputFile);
             writer.write("\n// ELI'S TRANSLATED FILE BTW");
             writer.close(); // TEMPORARY
         } catch (IOException e) {
@@ -103,36 +107,38 @@ public class CompilationEngine {
 
 
     private void compileClassVarDec() {
-        // classVarDec:	('static' | 'field') type varName (',' vaName)* ';'
-        w("<classVarDec>");
-        w("<keyword> " + tokenizer.keyWord() + " </keyword>"); // either static or field
-        tokenizer.advance();
 
-        if (tokenizer.tokenType() == JackTokenizer.Type.KEYWORD) { // could be a primitive data type or an object
-            w("<keyword> " + tokenizer.keyWord() + " </keyword>");
+        SymbolTable.VarKind kind = st.strToVarKind(tokenizer.keyWord()); // "static" or "field"
+        tokenizer.advance();
+    
+        // type (keyword or class name)
+        String type;
+        if (tokenizer.tokenType() == JackTokenizer.Type.KEYWORD) {
+            type = tokenizer.keyWord();
         } else {
-            w("<identifier> " + tokenizer.identifier() + " </identifier>");
+            type = tokenizer.identifier();
         }
         tokenizer.advance();
-
-        w("<identifier> " + tokenizer.identifier() + " </identifier>"); // regardless of previous decision, the variable's name comes next
+    
+        // first var name
+        String name = tokenizer.identifier();
+        st.Define(name, type, kind);
         tokenizer.advance();
-
-        while (tokenizer.symbol() == ',') { // handle multiple variables
-            w("<symbol> , </symbol>");
-            tokenizer.advance();
-
-            w("<identifier> " + tokenizer.identifier() + " </identifier>");
+    
+        // handle multiple variables
+        while (tokenizer.tokenType() == JackTokenizer.Type.SYMBOL && tokenizer.symbol() == ',') {
+            tokenizer.advance(); // skip comma
+            name = tokenizer.identifier();
+            st.Define(name, type, kind);
             tokenizer.advance();
         }
-
-        w("<symbol> ; </symbol>");
-
-        tokenizer.advance();
-
-        w("</classVarDec>");
-
+    
+        // skip semicolon
+        if (tokenizer.symbol() == ';') {
+            tokenizer.advance();
+        }
     }
+    
 
     /**
      * Section 10.3.3 suggests making compileSubroutine. Figure 10.5 does not
@@ -141,57 +147,59 @@ public class CompilationEngine {
      * (subroutineBody), both of which are defined. *
      */
     private void compileSubroutine() {
-        // subroutine:			subroutineDec subroutineBody
-        // 		subroutineDec:	('constructor' | 'function' | 'method')
-        //						('void' | type) subroutineName '(' parameterList ')'
-        //						subroutineBody
-        //		subroutineBody:	'{' varDec* statements '}'
-
-        w("<subroutineDec>");
-
-        w("<keyword> " + tokenizer.keyWord() + " </keyword>"); // constructor, function, or method
+        // No advance here! Read current token
+        String subroutineType = tokenizer.keyWord(); // constructor, function, or method
         tokenizer.advance();
-
-        if (tokenizer.tokenType() == JackTokenizer.Type.KEYWORD) { // keyword or
-            w("<keyword> " + tokenizer.keyWord() + " </keyword>");
+    
+        String returnType;
+        if (tokenizer.tokenType() == JackTokenizer.Type.KEYWORD) {
+            returnType = tokenizer.keyWord();
+            tokenizer.advance();
         } else {
-            w("<identifier> " + tokenizer.identifier() + " </identifier>");
+            returnType = tokenizer.identifier();
+            tokenizer.advance();
         }
+    
+        String subroutineName = tokenizer.identifier();
         tokenizer.advance();
-
-        w("<identifier> " + tokenizer.identifier() + " </identifier>"); // subroutineName
-        tokenizer.advance();
-
-        w("<symbol> ( </symbol>"); // '('
-        tokenizer.advance();
-
-        compileParameterList(); // parameters
-
-        w("<symbol> ) </symbol>"); // ')'
-        tokenizer.advance();
-
-        compileSubroutineBody(); // body
-
-        w("</subroutineDec>");
+    
+        symbolTable.startSubroutine();
+        if (subroutineType.equals("method")) {
+            symbolTable.define("this", className, "argument");
+        }
+    
+        tokenizer.advance(); // skip '('
+        compileParameterList();
+        tokenizer.advance(); // skip ')'
+    
+        compileSubroutineBody(subroutineName, subroutineType);
     }
-
-    private void compileSubroutineBody() {
-        w("<subroutineBody>");
-
-        w("<symbol> { </symbol>");
-        tokenizer.advance();
-
+    
+    private void compileSubroutineBody(String subroutineName, String subroutineType) {
+        tokenizer.advance(); // skip '{'
+    
+        int nLocals = 0;
         while (tokenizer.tokenType() == JackTokenizer.Type.KEYWORD && tokenizer.keyWord().equals("var")) {
-            compileVarDec();
+            nLocals += compileVarDec(); // make compileVarDec return count of vars declared
         }
-
+    
+        vmw.writeFunction(className + "." + subroutineName, nLocals);
+    
+        if (subroutineType.equals("constructor")) {
+            int fieldCount = symbolTable.varCount("field");
+            vmw.writePush("constant", fieldCount);
+            vmw.writeCall("Memory.alloc", 1);
+            vmw.writePop("pointer", 0);
+        } else if (subroutineType.equals("method")) {
+            vmw.writePush("argument", 0);
+            vmw.writePop("pointer", 0);
+        }
+    
         compileStatements();
-
-        w("<symbol> } </symbol>");
-        tokenizer.advance();
-
-        w("</subroutineBody>");
+    
+        tokenizer.advance(); // skip '}'
     }
+    
 
     private void compileParameterList() {
         // parameterList:	((type varName) (',' type varName)*)?

@@ -39,6 +39,17 @@ public class SymbolTable {
         varCount = 0;
     }
 
+    public VarKind strToVarKind(String s){
+        return switch (s.toLowerCase()){
+            case "static" -> VarKind.STATIC;
+            case "field" -> VarKind.FIELD;
+            case "arg" -> VarKind.ARG;
+            case "var" -> VarKind.VAR;
+
+            default -> VarKind.NONE;
+        };
+    }
+
     public void startSubroutine(){ // Starts a new subroutine scope (i.e., resets the subroutine's symbol table)
         subroutineVars = new Hashtable<>();
         argCount = 0;
