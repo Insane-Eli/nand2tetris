@@ -1,6 +1,7 @@
 
 import java.io.*;
 
+
 /**
  * @author tha one and only TOP SHOTTA Eli "Insane Eli" Currah (fan-made name)
  * CompilationEngine will serve as the focus for most of the compilers
@@ -20,6 +21,8 @@ public class CompilationEngine {
 
     private JackTokenizer tokenizer;
     private BufferedWriter writer;
+    private SymbolTable st;
+    private VMWriter vmw;
     private String className;
 
     public void debug(String keyword) {
@@ -37,6 +40,8 @@ public class CompilationEngine {
             writer = new BufferedWriter(new FileWriter(outputFile));
             compileClass();
             writer.write("\n// ELI'S TRANSLATED FILE BTW");
+            st = new SymbolTable();
+            vmw = new VMWriter(outputFile);
             writer.close(); // TEMPORARY
         } catch (IOException e) {
             System.out.println("error compilation engine constructor: " + e);
@@ -102,37 +107,47 @@ public class CompilationEngine {
     }
 
 
-    private void compileClassVarDec() {
-        // classVarDec:	('static' | 'field') type varName (',' vaName)* ';'
-        w("<classVarDec>");
-        w("<keyword> " + tokenizer.keyWord() + " </keyword>"); // either static or field
-        tokenizer.advance();
+private void compileClassVarDec() {
+    // ('static' | 'field') type varName (',' varName)* ';'
 
-        if (tokenizer.tokenType() == JackTokenizer.Type.KEYWORD) { // could be a primitive data type or an object
-            w("<keyword> " + tokenizer.keyWord() + " </keyword>");
-        } else {
-            w("<identifier> " + tokenizer.identifier() + " </identifier>");
-        }
-        tokenizer.advance();
-
-        w("<identifier> " + tokenizer.identifier() + " </identifier>"); // regardless of previous decision, the variable's name comes next
-        tokenizer.advance();
-
-        while (tokenizer.symbol() == ',') { // handle multiple variables
-            w("<symbol> , </symbol>");
-            tokenizer.advance();
-
-            w("<identifier> " + tokenizer.identifier() + " </identifier>");
-            tokenizer.advance();
-        }
-
-        w("<symbol> ; </symbol>");
-
-        tokenizer.advance();
-
-        w("</classVarDec>");
-
+    // kind = static or field
+    SymbolTable.VarKind kind;
+    if (tokenizer.keyWord().equals("static")) {
+        kind = SymbolTable.VarKind.STATIC;
+    } else {
+        kind = SymbolTable.VarKind.FIELD;
     }
+    tokenizer.advance();
+
+    // type = int, char, boolean, or className
+    String type;
+    if (tokenizer.tokenType() == JackTokenizer.Type.KEYWORD) {
+        type = tokenizer.keyWord();
+    } else {
+        type = tokenizer.identifier(); // class name
+    }
+    tokenizer.advance();
+
+    // first varName
+    String varName = tokenizer.identifier();
+    st.Define(varName, type, kind);  // use enum kind now
+    tokenizer.advance();
+
+    // handle commas: more varNames
+    while (tokenizer.tokenType() == JackTokenizer.Type.SYMBOL && tokenizer.symbol() == ',') {
+        tokenizer.advance();
+        varName = tokenizer.identifier();
+        st.Define(varName, type, kind);
+        tokenizer.advance();
+    }
+
+    // expect ';'
+    if (tokenizer.symbol() == ';') {
+        tokenizer.advance();
+    }
+}
+
+
 
     /**
      * Section 10.3.3 suggests making compileSubroutine. Figure 10.5 does not
