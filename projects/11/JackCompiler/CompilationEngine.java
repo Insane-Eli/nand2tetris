@@ -107,45 +107,45 @@ public class CompilationEngine {
     }
 
 
-private void compileClassVarDec() {
-    // ('static' | 'field') type varName (',' varName)* ';'
+    private void compileClassVarDec() {
+        // ('static' | 'field') type varName (',' varName)* ';'
 
-    // kind = static or field
-    SymbolTable.VarKind kind;
-    if (tokenizer.keyWord().equals("static")) {
-        kind = SymbolTable.VarKind.STATIC;
-    } else {
-        kind = SymbolTable.VarKind.FIELD;
-    }
-    tokenizer.advance();
-
-    // type = int, char, boolean, or className
-    String type;
-    if (tokenizer.tokenType() == JackTokenizer.Type.KEYWORD) {
-        type = tokenizer.keyWord();
-    } else {
-        type = tokenizer.identifier(); // class name
-    }
-    tokenizer.advance();
-
-    // first varName
-    String varName = tokenizer.identifier();
-    st.Define(varName, type, kind);  // use enum kind now
-    tokenizer.advance();
-
-    // handle commas: more varNames
-    while (tokenizer.tokenType() == JackTokenizer.Type.SYMBOL && tokenizer.symbol() == ',') {
+        // kind = static or field
+        SymbolTable.VarKind kind;
+        if (tokenizer.keyWord().equals("static")) {
+            kind = SymbolTable.VarKind.STATIC;
+        } else {
+            kind = SymbolTable.VarKind.FIELD;
+        }
         tokenizer.advance();
-        varName = tokenizer.identifier();
-        st.Define(varName, type, kind);
-        tokenizer.advance();
-    }
 
-    // expect ';'
-    if (tokenizer.symbol() == ';') {
+        // type = int, char, boolean, or className
+        String type;
+        if (tokenizer.tokenType() == JackTokenizer.Type.KEYWORD) {
+            type = tokenizer.keyWord();
+        } else {
+            type = tokenizer.identifier(); // class name
+        }
         tokenizer.advance();
+
+        // first varName
+        String varName = tokenizer.identifier();
+        st.Define(varName, type, kind);  // use enum kind now
+        tokenizer.advance();
+
+        // handle commas: more varNames
+        while (tokenizer.tokenType() == JackTokenizer.Type.SYMBOL && tokenizer.symbol() == ',') {
+            tokenizer.advance();
+            varName = tokenizer.identifier();
+            st.Define(varName, type, kind);
+            tokenizer.advance();
+        }
+
+        // expect ';'
+        if (tokenizer.symbol() == ';') {
+            tokenizer.advance();
+        }
     }
-}
 
 
 
@@ -162,89 +162,88 @@ private void compileClassVarDec() {
         //						subroutineBody
         //		subroutineBody:	'{' varDec* statements '}'
 
-        w("<subroutineDec>");
+        // subroutineDec:
+        st.startSubroutine();
 
-        w("<keyword> " + tokenizer.keyWord() + " </keyword>"); // constructor, function, or method
+        String subKind = tokenizer.keyWord(); // constructor, function, or method
         tokenizer.advance();
 
-        if (tokenizer.tokenType() == JackTokenizer.Type.KEYWORD) { // keyword or
-            w("<keyword> " + tokenizer.keyWord() + " </keyword>");
-        } else {
-            w("<identifier> " + tokenizer.identifier() + " </identifier>");
-        }
+        tokenizer.advance(); // 'void' | 'type'
+
+        String subName = tokenizer.keyWord(); // subroutineName
         tokenizer.advance();
 
-        w("<identifier> " + tokenizer.identifier() + " </identifier>"); // subroutineName
-        tokenizer.advance();
+        tokenizer.advance(); // '('
+        compileParameterList(subKind.equals("method"));
+        tokenizer.advance(); // ')'
 
-        w("<symbol> ( </symbol>"); // '('
-        tokenizer.advance();
 
-        compileParameterList(); // parameters
+        // subroutineBody:
+        tokenizer.advance(); // '{'
 
-        w("<symbol> ) </symbol>"); // ')'
-        tokenizer.advance();
-
-        compileSubroutineBody(); // body
-
-        w("</subroutineDec>");
-    }
-
-    private void compileSubroutineBody() {
-        w("<subroutineBody>");
-
-        w("<symbol> { </symbol>");
-        tokenizer.advance();
-
-        while (tokenizer.tokenType() == JackTokenizer.Type.KEYWORD && tokenizer.keyWord().equals("var")) {
+        while (tokenizer.tokenType() == JackTokenizer.Type.KEYWORD && tokenizer.keyWord().equals("var")) { // varDec* statements
             compileVarDec();
+        }
+
+
+        // VM function declaration
+        int numLocals = st.VarCount(SymbolTable.VarKind.VAR);
+        vmw.writeFunction(className + "." + subName, numLocals);
+
+        // constructor/method setup
+        if (subKind.equals("constructor")) {
+            int numFields = st.VarCount(SymbolTable.VarKind.FIELD);
+            vmw.writePush("constant", numFields);
+            vmw.writeCall("Memory.alloc", 1);
+            vmw.writePop("pointer", 0); // this = allocated memory
+        } else if (subKind.equals("method")) {
+            vmw.writePush("argument", 0);
+            vmw.writePop("pointer", 0); // this = argument 0
         }
 
         compileStatements();
 
-        w("<symbol> } </symbol>");
-        tokenizer.advance();
-
-        w("</subroutineBody>");
+        tokenizer.advance(); // '}'
     }
 
-    private void compileParameterList() {
-        // parameterList:	((type varName) (',' type varName)*)?
-        w("<parameterList>");
 
-        if (tokenizer.tokenType() == JackTokenizer.Type.KEYWORD || tokenizer.tokenType() == JackTokenizer.Type.IDENTIFIER) {
 
-            // first type
-            if (tokenizer.tokenType() == JackTokenizer.Type.KEYWORD) {
-                w("<keyword> " + tokenizer.keyWord() + " </keyword>");
-            } else {
-                w("<identifier> " + tokenizer.identifier() + " </identifier>");
-            }
-            tokenizer.advance();
+    private void compileParameterList(boolean isMethod) {
+        // If this is a method, add an implicit "this" as the first argument
+        if (isMethod) {
+            st.Define("this", className, SymbolTable.VarKind.ARG);
+        }
 
-            // first variable
-            w("<identifier> " + tokenizer.identifier() + " </identifier>");
-            tokenizer.advance();
+        // parameterList: ((type varName) (',' type varName)*)?
+        if (tokenizer.tokenType() == JackTokenizer.Type.KEYWORD ||
+            tokenizer.tokenType() == JackTokenizer.Type.IDENTIFIER) {
 
-            // additional variables ", (type) (name)"s
-            while (tokenizer.tokenType() == JackTokenizer.Type.SYMBOL && tokenizer.symbol() == ',') {
-                w("<symbol> , </symbol>");
-                tokenizer.advance();
-
+            while (true) {
+                // type
+                String type;
                 if (tokenizer.tokenType() == JackTokenizer.Type.KEYWORD) {
-                    w("<keyword> " + tokenizer.keyWord() + " </keyword>");
+                    type = tokenizer.keyWord(); // int, boolean, char, void
                 } else {
-                    w("<identifier> " + tokenizer.identifier() + " </identifier>");
+                    type = tokenizer.identifier(); // class type
                 }
                 tokenizer.advance();
 
-                w("<identifier> " + tokenizer.identifier() + " </identifier>");
+                // varName
+                String name = tokenizer.identifier();
+                st.Define(name, type, SymbolTable.VarKind.ARG);
                 tokenizer.advance();
+
+                // if next is ',', continue; otherwise break
+                if (tokenizer.tokenType() == JackTokenizer.Type.SYMBOL &&
+                    tokenizer.symbol() == ',') {
+                    tokenizer.advance(); // skip ','
+                } else {
+                    break;
+                }
             }
         }
-
-        w("</parameterList>");
     }
+
 
     private void compileVarDec() {
         // varDec:	'var' type varName (',' type varName)*)?
