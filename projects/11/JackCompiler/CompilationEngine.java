@@ -130,10 +130,10 @@ public class CompilationEngine {
 
         // first varName
         String varName = tokenizer.identifier();
-        st.Define(varName, type, kind);  // use enum kind now
+        st.Define(varName, type, kind); 
         tokenizer.advance();
 
-        // handle commas: more varNames
+        // more commas = more varNames
         while (tokenizer.tokenType() == JackTokenizer.Type.SYMBOL && tokenizer.symbol() == ',') {
             tokenizer.advance();
             varName = tokenizer.identifier();
@@ -141,7 +141,7 @@ public class CompilationEngine {
             tokenizer.advance();
         }
 
-        // expect ';'
+        // ';'
         if (tokenizer.symbol() == ';') {
             tokenizer.advance();
         }
@@ -179,6 +179,7 @@ public class CompilationEngine {
 
 
         // subroutineBody:
+        // since we need subKind in the implementation and it's relatively short, it's easier to just get rid of compileSubroutineBody() and throw the logic in here
         tokenizer.advance(); // '{'
 
         while (tokenizer.tokenType() == JackTokenizer.Type.KEYWORD && tokenizer.keyWord().equals("var")) { // varDec* statements
@@ -186,7 +187,7 @@ public class CompilationEngine {
         }
 
 
-        // VM function declaration
+        // vm function declaration
         int numLocals = st.VarCount(SymbolTable.VarKind.VAR);
         vmw.writeFunction(className + "." + subName, numLocals);
 
@@ -196,6 +197,7 @@ public class CompilationEngine {
             vmw.writePush("constant", numFields);
             vmw.writeCall("Memory.alloc", 1);
             vmw.writePop("pointer", 0); // this = allocated memory
+
         } else if (subKind.equals("method")) {
             vmw.writePush("argument", 0);
             vmw.writePop("pointer", 0); // this = argument 0
@@ -209,6 +211,7 @@ public class CompilationEngine {
 
 
     private void compileParameterList(boolean isMethod) {
+
         // If this is a method, add an implicit "this" as the first argument
         if (isMethod) {
             st.Define("this", className, SymbolTable.VarKind.ARG);
@@ -233,10 +236,9 @@ public class CompilationEngine {
                 st.Define(name, type, SymbolTable.VarKind.ARG);
                 tokenizer.advance();
 
-                // if next is ',', continue; otherwise break
-                if (tokenizer.tokenType() == JackTokenizer.Type.SYMBOL &&
-                    tokenizer.symbol() == ',') {
-                    tokenizer.advance(); // skip ','
+                // if there's another comma continue, otherwise break
+                if (tokenizer.tokenType() == JackTokenizer.Type.SYMBOL && tokenizer.symbol() == ',') {
+                    tokenizer.advance();
                 } else {
                     break;
                 }
@@ -246,39 +248,38 @@ public class CompilationEngine {
 
 
     private void compileVarDec() {
-        // varDec:	'var' type varName (',' type varName)*)?
-        w("<varDec>");
-        w("<keyword> var </keyword>");
-        tokenizer.advance();
+        tokenizer.advance(); // 'var'
 
-        if (tokenizer.tokenType() == JackTokenizer.Type.KEYWORD) { // could be a primitive data type or an object
-            w("<keyword> " + tokenizer.keyWord() + " </keyword>");
+        // type
+        String type;
+        if (tokenizer.tokenType() == JackTokenizer.Type.KEYWORD) {
+            type = tokenizer.keyWord(); // int, char, boolean
         } else {
-            w("<identifier> " + tokenizer.identifier() + " </identifier>");
+            type = tokenizer.identifier(); // class type
+        }
+        tokenizer.advance();
+
+        // first varName
+        String name = tokenizer.identifier();
+        st.Define(name, type, SymbolTable.VarKind.VAR); // add local to symbol table
+        tokenizer.advance();
+
+        // handle ", varName"*
+        while (tokenizer.tokenType() == JackTokenizer.Type.SYMBOL &&
+            tokenizer.symbol() == ',') {
+            tokenizer.advance(); // ','
+
+            name = tokenizer.identifier();
+            st.Define(name, type, SymbolTable.VarKind.VAR); // add each additional local
+            tokenizer.advance();
         }
 
-        tokenizer.advance();
-
-        w("<identifier> " + tokenizer.identifier() + " </identifier>"); // regardless of previous decision, the variable's name comes next
-        tokenizer.advance();
-
-        while (tokenizer.symbol() == ',') { // handle multiple variables
-            w("<symbol> , </symbol>");
-            tokenizer.advance();
-
-            w("<identifier> " + tokenizer.identifier() + " </identifier>");
-            tokenizer.advance();
-        }
-
-        w("<symbol> ; </symbol>");
-        tokenizer.advance();
-
-        w("</varDec>");
+        tokenizer.advance(); // ';'
     }
+
 
     private void compileStatements() {
         // statements:	statement*
-        w("<statements>");
 
         while (tokenizer.tokenType() == JackTokenizer.Type.KEYWORD) {
             String keyword = tokenizer.keyWord();
@@ -293,46 +294,69 @@ public class CompilationEngine {
                 }
             }
         }
-
-        w("</statements>");
-
     }
 
     private void compileDo() {
-        // doStatement:	'do' subroutineCall ';'
-        w("<doStatement>");
+        
+        tokenizer.advance(); // 'do'
 
-        // do
-        w("<keyword> do </keyword>");
+        String name = tokenizer.identifier(); // subroutineName, className, or varName
         tokenizer.advance();
 
-        // write identifier (subroutineName, className or varName)
-        w("<identifier> " + tokenizer.identifier() + " </identifier>");
-        tokenizer.advance();
+        int numArgs = 0;
+        String subroutineName;
 
-        if (tokenizer.symbol() == '.') {
-            w("<symbol> . </symbol>");
+        if (tokenizer.tokenType() == JackTokenizer.Type.SYMBOL && tokenizer.symbol() == '.') {
+            tokenizer.advance(); // '.'
+
+            String nextName = tokenizer.identifier();
             tokenizer.advance();
 
-            // subroutineName
-            w("<identifier> " + tokenizer.identifier() + " </identifier>");
-            tokenizer.advance();
+            // check if "name" is a var in the symbol table (i.e. method call on an object)
+            if (st.KindOf(name) != SymbolTable.VarKind.NONE) {
+                String type = st.TypeOf(name);
+                int index = st.IndexOf(name);
+                String segment;
+
+                segment = switch(st.KindOf(name)) {
+                    case VAR -> "local";
+                    case ARG -> "argument";
+                    case FIELD -> "this";
+                    case STATIC -> "static";
+                    default -> "bruh!";
+                };
+
+                // push object reference as arg0
+                vmw.writePush(segment, index);
+                numArgs++;
+                subroutineName = type + "." + nextName; // method call on object type
+            } else {
+                // className.subroutineName (static call)
+                subroutineName = name + "." + nextName;
+            }
+        } else {
+            // subroutine in the current class
+            // push "this" as arg0
+            vmw.writePush("pointer", 0);
+            numArgs++;
+            subroutineName = className + "." + name;
         }
 
-        w("<symbol> ( </symbol>");
+
+        tokenizer.advance(); // '('
+
+        numArgs += compileExpressionList();
+
+        tokenizer.advance(); // ')'
+
+        vmw.writeCall(subroutineName, numArgs);
+        
+        vmw.writePop("temp", 0); // discard return value
+
+        // ';'
         tokenizer.advance();
-
-        compileExpressionList();
-
-        w("<symbol> ) </symbol>");
-        tokenizer.advance();
-
-        // ;
-        w("<symbol> ; </symbol>");
-        tokenizer.advance();
-
-        w("</doStatement>");
     }
+
 
     private void compileLet() {
         // letStatement:  'let' varName ('[' expression ']')? '=' expression ';'
@@ -586,20 +610,21 @@ public class CompilationEngine {
         w("</term>");
     }
 
-    private void compileExpressionList() {
-        // expressionList:	( expression (',' expression)* )?
-        w("<expressionList>");
+    private int compileExpressionList() {
+        int count = 0;
 
+        // check for empty expression list
         if (!(tokenizer.tokenType() == JackTokenizer.Type.SYMBOL && tokenizer.symbol() == ')')) {
             compileExpression();
+            count++;
 
             while (tokenizer.tokenType() == JackTokenizer.Type.SYMBOL && tokenizer.symbol() == ',') {
-                w("<symbol> , </symbol>");
                 tokenizer.advance();
                 compileExpression();
+                count++;
             }
         }
 
-        w("</expressionList>");
+        return count;
     }
 }
