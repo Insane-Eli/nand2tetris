@@ -212,23 +212,24 @@ public class CompilationEngine {
 
     private void compileParameterList(boolean isMethod) {
 
-        // If this is a method, add an implicit "this" as the first argument
+        // if method, add "this" as first arg
         if (isMethod) {
             st.Define("this", className, SymbolTable.VarKind.ARG);
         }
 
         // parameterList: ((type varName) (',' type varName)*)?
-        if (tokenizer.tokenType() == JackTokenizer.Type.KEYWORD ||
-            tokenizer.tokenType() == JackTokenizer.Type.IDENTIFIER) {
+        if (tokenizer.tokenType() == JackTokenizer.Type.KEYWORD || tokenizer.tokenType() == JackTokenizer.Type.IDENTIFIER) {
 
             while (true) {
-                // type
-                String type;
+
+                String type; // type
+
                 if (tokenizer.tokenType() == JackTokenizer.Type.KEYWORD) {
                     type = tokenizer.keyWord(); // int, boolean, char, void
                 } else {
                     type = tokenizer.identifier(); // class type
                 }
+
                 tokenizer.advance();
 
                 // varName
@@ -236,7 +237,7 @@ public class CompilationEngine {
                 st.Define(name, type, SymbolTable.VarKind.ARG);
                 tokenizer.advance();
 
-                // if there's another comma continue, otherwise break
+                // if more commas continue, otherwise break
                 if (tokenizer.tokenType() == JackTokenizer.Type.SYMBOL && tokenizer.symbol() == ',') {
                     tokenizer.advance();
                 } else {
@@ -248,10 +249,10 @@ public class CompilationEngine {
 
 
     private void compileVarDec() {
+
         tokenizer.advance(); // 'var'
 
-        // type
-        String type;
+        String type; // type
         if (tokenizer.tokenType() == JackTokenizer.Type.KEYWORD) {
             type = tokenizer.keyWord(); // int, char, boolean
         } else {
@@ -259,18 +260,18 @@ public class CompilationEngine {
         }
         tokenizer.advance();
 
-        // first varName
+        // varName
         String name = tokenizer.identifier();
         st.Define(name, type, SymbolTable.VarKind.VAR); // add local to symbol table
         tokenizer.advance();
 
-        // handle ", varName"*
+        // ", varName"*
         while (tokenizer.tokenType() == JackTokenizer.Type.SYMBOL &&
             tokenizer.symbol() == ',') {
             tokenizer.advance(); // ','
 
             name = tokenizer.identifier();
-            st.Define(name, type, SymbolTable.VarKind.VAR); // add each additional local
+            st.Define(name, type, SymbolTable.VarKind.VAR); // add the extra locals
             tokenizer.advance();
         }
 
@@ -279,7 +280,6 @@ public class CompilationEngine {
 
 
     private void compileStatements() {
-        // statements:	statement*
 
         while (tokenizer.tokenType() == JackTokenizer.Type.KEYWORD) {
             String keyword = tokenizer.keyWord();
@@ -312,7 +312,7 @@ public class CompilationEngine {
             String nextName = tokenizer.identifier();
             tokenizer.advance();
 
-            // check if "name" is a var in the symbol table (i.e. method call on an object)
+            // check for "name" in symbol table (i.e. method call on an object)
             if (st.KindOf(name) != SymbolTable.VarKind.NONE) {
                 String type = st.TypeOf(name);
                 int index = st.IndexOf(name);
@@ -330,7 +330,9 @@ public class CompilationEngine {
                 vmw.writePush(segment, index);
                 numArgs++;
                 subroutineName = type + "." + nextName; // method call on object type
+
             } else {
+
                 // className.subroutineName (static call)
                 subroutineName = name + "." + nextName;
             }
@@ -361,15 +363,14 @@ public class CompilationEngine {
     private void compileLet() {
         // letStatement:  'let' varName ('[' expression ']')? '=' expression ';'
 
-        w("<letStatement>");
-
-        // let
-        w("<keyword> let </keyword>");
-        tokenizer.advance();
+        tokenizer.advance(); // let
 
         // varName
-        w("<identifier> " + tokenizer.identifier() + " </identifier>");
-        tokenizer.advance();
+        String varName = tokenizer.identifier();
+        SymbolTable.VarKind kind = st.KindOf(varName);
+        String type = st.TypeOf(varName);
+        int index = st.IndexOf(varName);
+
 
         // [expression]?
         if (tokenizer.tokenType() == JackTokenizer.Type.SYMBOL && tokenizer.symbol() == '[') {
