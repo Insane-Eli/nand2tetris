@@ -582,60 +582,73 @@ public class CompilationEngine {
      * lookahead. Subroutine call identifiers are always followed by an '('.
      * Looking ahead one token resolves the problem. *
      */
-    private void compileTerm() {
+    public void compileTerm() { // public ???
         // term:	integerConstant | stringConstant | keywordConstant |
         //			varName | varName '[' expression ']' | subroutineCall |
         //			'(' expression ')' | unaryOp term
 
-        w("<term>");
-
-        if (tokenizer.tokenType() == JackTokenizer.Type.INT_CONSTANT) {
-            w("<integerConstant> " + tokenizer.intVal() + " </integerConstant>");
+        if (tokenizer.tokenType() == JackTokenizer.Type.INT_CONSTANT) { // integerConstant | DONE
+            vmw.writePush("constant", tokenizer.intVal());
             tokenizer.advance();
 
-        } else if (tokenizer.tokenType() == JackTokenizer.Type.STRING_CONSTANT) {
-            w("<stringConstant> " + tokenizer.stringVal() + " </stringConstant>");
+        } else if (tokenizer.tokenType() == JackTokenizer.Type.STRING_CONSTANT) { // stringConstant | DONE
+
+            vmw.writePush("constant", tokenizer.stringVal().length());
+            vmw.writeCall("String.new", 1);
+
+            for(char c : tokenizer.stringVal().toCharArray()){
+                vmw.writePush("constant", (int) c);
+                vmw.writeCall("String.appendChar", 2);
+            }
+
             tokenizer.advance();
 
-        } else if (tokenizer.tokenType() == JackTokenizer.Type.KEYWORD) {
-            w("<keyword> " + tokenizer.keyWord() + " </keyword>");
+        } else if (tokenizer.tokenType() == JackTokenizer.Type.KEYWORD) { // keywordConstant | DONE
+
+            switch(tokenizer.keyWord()){
+                case "true" -> {
+                    vmw.writePush("constant", 0);
+                    vmw.writeArithmetic("not");
+                }
+                case "false", "null" -> vmw.writePush("constant", 0);
+                case "this" -> vmw.writePush("pointer", 0);
+            }
+\
             tokenizer.advance();
 
-        } else if (tokenizer.tokenType() == JackTokenizer.Type.SYMBOL
-                && (tokenizer.symbol() == '-' || tokenizer.symbol() == '~')) {
+        } else if (tokenizer.tokenType() == JackTokenizer.Type.SYMBOL && (tokenizer.symbol() == '-' || tokenizer.symbol() == '~')) {
             w("<symbol> " + tokenizer.symbol() + " </symbol>");
             tokenizer.advance();
             compileTerm();
 
-        } else if (tokenizer.tokenType() == JackTokenizer.Type.SYMBOL
-                && tokenizer.symbol() == '(') {
+        } else if (tokenizer.tokenType() == JackTokenizer.Type.SYMBOL && tokenizer.symbol() == '(') {
             w("<symbol> ( </symbol>");
             tokenizer.advance();
             compileExpression();
             w("<symbol> ) </symbol>");
             tokenizer.advance();
 
-        } else if (tokenizer.tokenType() == JackTokenizer.Type.IDENTIFIER) {
+        } else if (tokenizer.tokenType() == JackTokenizer.Type.IDENTIFIER) { // varName
             w("<identifier> " + tokenizer.identifier() + " </identifier>");
             tokenizer.advance();
 
             if (tokenizer.tokenType() == JackTokenizer.Type.SYMBOL) {
                 switch (tokenizer.symbol()) {
-                    case '[' -> {
-                        w("<symbol> [ </symbol>");
+                    case '[' -> { // varName[]
+                        vmw.writePush("Array.new", 1);
                         tokenizer.advance();
                         compileExpression();
                         w("<symbol> ] </symbol>");
                         tokenizer.advance();
                     }
-                    case '(' -> {
+                    case '(' -> { // varName() 
                         w("<symbol> ( </symbol>");
                         tokenizer.advance();
                         compileExpressionList();
                         w("<symbol> ) </symbol>");
                         tokenizer.advance();
                     }
-                    case '.' -> {
+                    case '.' -> { // varName. 
                         w("<symbol> . </symbol>");
                         tokenizer.advance();
                         w("<identifier> " + tokenizer.identifier() + " </identifier>");
@@ -646,8 +659,7 @@ public class CompilationEngine {
                         w("<symbol> ) </symbol>");
                         tokenizer.advance();
                     }
-                    default -> {
-                    }
+                    default -> {}
                 }
             }
         }
