@@ -309,13 +309,13 @@ public class CompilationEngine {
         if (tokenizer.tokenType() == JackTokenizer.Type.SYMBOL && tokenizer.symbol() == '.') {
             tokenizer.advance(); // '.'
 
-            String nextName = tokenizer.identifier();
+            String name2 = tokenizer.identifier();
             tokenizer.advance();
 
-            // check for "name" in symbol table (i.e. method call on an object)
+            // check for name in symbol table
             if (st.KindOf(name) != SymbolTable.VarKind.NONE) {
+
                 String type = st.TypeOf(name);
-                int index = st.IndexOf(name);
                 String segment;
 
                 segment = switch(st.KindOf(name)) {
@@ -327,14 +327,14 @@ public class CompilationEngine {
                 };
 
                 // push object reference as arg0
-                vmw.writePush(segment, index);
+                vmw.writePush(segment, st.IndexOf(name));
                 numArgs++;
-                subroutineName = type + "." + nextName; // method call on object type
+                subroutineName = type + "." + name2; // method call on object type
 
             } else {
 
                 // className.subroutineName (static call)
-                subroutineName = name + "." + nextName;
+                subroutineName = name + "." + name2;
             }
         } else {
             // subroutine in the current class
@@ -362,95 +362,133 @@ public class CompilationEngine {
 
     private void compileLet() {
         // letStatement:  'let' varName ('[' expression ']')? '=' expression ';'
+        
+        boolean isArray = false;
 
-        tokenizer.advance(); // let
+        tokenizer.advance(); // 'let'
 
         // varName
         String varName = tokenizer.identifier();
-        SymbolTable.VarKind kind = st.KindOf(varName);
-        String type = st.TypeOf(varName);
-        int index = st.IndexOf(varName);
-
+        tokenizer.advance();
 
         // [expression]?
         if (tokenizer.tokenType() == JackTokenizer.Type.SYMBOL && tokenizer.symbol() == '[') {
-            w("<symbol> [ </symbol>");
-            tokenizer.advance();
+            
+            isArray = true;
+    
+            tokenizer.advance(); // '['
+    
+            // push base address of varName
+            SymbolTable.VarKind kind = st.KindOf(varName);
+            int index = st.IndexOf(varName);
+            String segment = switch (kind) {
+                case VAR -> "local";
+                case ARG -> "argument";
+                case FIELD -> "this";
+                case STATIC -> "static";
+                default -> "bruh :d";
+            };
 
+            vmw.writePush(segment, index);
+    
+            // compile index expression
             compileExpression();
-
-            w("<symbol> ] </symbol>");
-            tokenizer.advance();
+    
+            tokenizer.advance(); // ']'
+    
+            // add base + index
+            vmw.writeArithmetic("add");
         }
 
         // =
-        w("<symbol> = </symbol>");
         tokenizer.advance();
 
         // expression
         compileExpression();
 
         // ;
-        w("<symbol> ; </symbol>");
         tokenizer.advance();
+        
+        if (isArray) {
+            // For arr[i] = expr
+            vmw.writePop("temp", 0);     // save expr value
+            vmw.writePop("pointer", 1);  // set THAT = arr+i
+            vmw.writePush("temp", 0);    // reload expr value
+            vmw.writePop("that", 0);     // store into arr[i]
+        } else {
 
-        w("</letStatement>");
+            String segment;
+
+            segment = switch(st.KindOf(varName)) {
+                case VAR -> "local";
+                case ARG -> "argument";
+                case FIELD -> "this";
+                case STATIC -> "static";
+                default -> "bruh!";
+            };
+
+            vmw.writePop(segment, st.IndexOf(varName));
+        }
     }
+
+    private int whileCounter = 0;
 
     private void compileWhile() {
+
         // whileStatement:  'while' '('  expression ')' '{' statements '}'
-
-        w("<whileStatement>");
-
-        // while
-        w("<keyword> while </keyword>");
-        tokenizer.advance();
-
-        // (
-        w("<symbol> ( </symbol>");
-        tokenizer.advance();
-
+        int thisWhile = whileCounter++;
+    
+        tokenizer.advance(); // 'while'
+    
+        tokenizer.advance(); // '('
+        vmw.writeLabel("WHILE_EXP" + thisWhile);
+    
         // expression
         compileExpression();
-
-        // )
-        w("<symbol> ) </symbol>");
-        tokenizer.advance();
-
-        // {
-        w("<symbol> { </symbol>");
-        tokenizer.advance();
-
+    
+        tokenizer.advance(); // ')'
+    
+        // negate condition
+        vmw.writeArithmetic("not");
+    
+        // if-goto end
+        vmw.writeIf("WHILE_END" + thisWhile);
+    
+        tokenizer.advance(); // '{'
+    
         // statements
         compileStatements();
+    
+        tokenizer.advance(); // '}'
+    
+        // jump back to start
+        vmw.writeGoto("WHILE_EXP" + thisWhile);
+    
+        // end label
+        vmw.writeLabel("WHILE_END" + thisWhile);
 
-        // }
-        w("<symbol> } </symbol>");
-        tokenizer.advance();
-
-        w("</whileStatement>");
     }
+
 
     private void compileReturn() {
+            
         // returnStatement:	'return' expression? ';'
-        w("<returnStatement>");
 
-        // return
-        w("<keyword> return </keyword>");
-        tokenizer.advance();
+        tokenizer.advance(); // 'return'
 
-        // expression?
-        if (tokenizer.tokenType() != JackTokenizer.Type.SYMBOL) { // if not ;
+        // if next token isn't ';' there's an expression
+        if (!(tokenizer.tokenType() == JackTokenizer.Type.SYMBOL && tokenizer.symbol() == ';')) {
             compileExpression();
+        } else {
+            // void return → push 0
+            vmw.writePush("constant", 0);
         }
 
-        // ;
-        w("<symbol> ; </symbol>");
-        tokenizer.advance();
+        tokenizer.advance(); // ';'
 
-        w("</returnStatement>");
-
+        vmw.writeReturn();
     }
+
 
     private void compileIf() {
         // ifStatement:  'if' '(' expression ')' '{' statements '}'
