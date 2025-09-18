@@ -480,7 +480,7 @@ public class CompilationEngine {
         if (!(tokenizer.tokenType() == JackTokenizer.Type.SYMBOL && tokenizer.symbol() == ';')) {
             compileExpression();
         } else {
-            // void return → push 0
+            // void return = 0
             vmw.writePush("constant", 0);
         }
 
@@ -540,18 +540,31 @@ public class CompilationEngine {
     }
 
     private void compileExpression() {
+
         // expression:	term (op term)*
-        w("<expression>");
-        compileTerm();
 
+        compileTerm(); // term
+    
+        // while the current token is an operator
         while (tokenizer.tokenType() == JackTokenizer.Type.SYMBOL && isValidSymbol(tokenizer.symbol())) {
-            w("<symbol> " + comparisonSwitch(tokenizer.symbol()) + " </symbol>");
-            tokenizer.advance();
+
+            char operator = tokenizer.symbol();
+            tokenizer.advance(); // operator
+    
             compileTerm();
+    
+            switch (operator) {
+                case '+' -> vmw.writeArithmetic("add");
+                case '-' -> vmw.writeArithmetic("sub");
+                case '*' -> vmw.writeCall("Math.multiply", 2);
+                case '/' -> vmw.writeCall("Math.divide", 2);
+                case '&' -> vmw.writeArithmetic("and");
+                case '|' -> vmw.writeArithmetic("or");
+                case '<' -> vmw.writeArithmetic("lt");
+                case '>' -> vmw.writeArithmetic("gt");
+                case '=' -> vmw.writeArithmetic("eq");
+            }
         }
-
-        w("</expression>");
-
     }
 
     public String comparisonSwitch(char token) {
