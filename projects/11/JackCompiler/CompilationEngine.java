@@ -448,7 +448,7 @@ public class CompilationEngine {
     
         tokenizer.advance(); // ')'
     
-        // negate condition
+        // not condition
         vmw.writeArithmetic("not");
     
         // if-goto end
@@ -489,55 +489,48 @@ public class CompilationEngine {
         vmw.writeReturn();
     }
 
+    private int ifCounter = 0;
 
     private void compileIf() {
+
         // ifStatement:  'if' '(' expression ')' '{' statements '}'
         //				('else' '{' statements '}')?
 
-        w("<ifStatement>");
+        int thisIf = ifCounter++;
+    
+        tokenizer.advance(); // 'if'
 
-        // if
-        w("<keyword> if </keyword>");
-        tokenizer.advance();
+        tokenizer.advance(); // '('
+    
+        compileExpression(); // expression
+    
+        tokenizer.advance(); // ')'
+    
+        // condition is on stack, not it
+        vmw.writeArithmetic("not");
+        vmw.writeIf("IF_FALSE" + thisIf);
+    
+        tokenizer.advance(); // '{'
 
-        // (
-        w("<symbol> ( </symbol>");
-        tokenizer.advance();
-
-        // expression
-        compileExpression();
-
-        // )
-        w("<symbol> ) </symbol>");
-        tokenizer.advance();
-
-        // {
-        w("<symbol> { </symbol>");
-        tokenizer.advance();
-
-        // statements
         compileStatements();
 
-        // }
-        w("<symbol> } </symbol>");
-        tokenizer.advance();
-
+        tokenizer.advance(); // '}'
+    
+        vmw.writeGoto("IF_END" + thisIf);
+        vmw.writeLabel("IF_FALSE" + thisIf);
+    
         // else?
         if (tokenizer.tokenType() == JackTokenizer.Type.KEYWORD && tokenizer.keyWord().equals("else")) {
-            w("<keyword> else </keyword>");
-            tokenizer.advance();
-
-            w("<symbol> { </symbol>");
-            tokenizer.advance();
-
+            tokenizer.advance(); // 'else'
+            tokenizer.advance(); // '{'
             compileStatements();
-
-            w("<symbol> } </symbol>");
-            tokenizer.advance();
+            tokenizer.advance(); // '}'
         }
-
-        w("</ifStatement>");
+    
+        vmw.writeLabel("IF_END" + thisIf);
     }
+    
+
 
     private void compileExpression() {
 
