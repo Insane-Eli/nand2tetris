@@ -3,7 +3,7 @@ import java.io.*;
 
 
 /**
- * @author tha one and only TOP SHOTTA Eli "Insane Eli" Currah (fan-made name)
+ * @author tha one and only TOP SHOTTA Eli "Insane Eli" Currah (fan-made name) + chatgpt ah ahhaha ha
  * CompilationEngine will serve as the focus for most of the compilers
  * functionality. Based on the grammar delineated in section 10.3.3, each method
  * will output XML and make appropriate calls to other methods. This recursive
@@ -606,65 +606,90 @@ public class CompilationEngine {
         } else if (tokenizer.tokenType() == JackTokenizer.Type.KEYWORD) { // keywordConstant | DONE
 
             switch(tokenizer.keyWord()){
-                case "true" -> {
-                    vmw.writePush("constant", 0);
-                    vmw.writeArithmetic("not");
-                }
+                case "true" -> vmw.writePush("constant", -1);
                 case "false", "null" -> vmw.writePush("constant", 0);
                 case "this" -> vmw.writePush("pointer", 0);
             }
-\
             tokenizer.advance();
 
-        } else if (tokenizer.tokenType() == JackTokenizer.Type.SYMBOL && (tokenizer.symbol() == '-' || tokenizer.symbol() == '~')) {
-            w("<symbol> " + tokenizer.symbol() + " </symbol>");
-            tokenizer.advance();
+        } else if (tokenizer.tokenType() == JackTokenizer.Type.SYMBOL && tokenizer.symbol() == '-') { // unaryOp negative | DONE
+            tokenizer.advance(); // -
             compileTerm();
+            vmw.writeArithmetic("neg");
 
-        } else if (tokenizer.tokenType() == JackTokenizer.Type.SYMBOL && tokenizer.symbol() == '(') {
-            w("<symbol> ( </symbol>");
-            tokenizer.advance();
-            compileExpression();
-            w("<symbol> ) </symbol>");
-            tokenizer.advance();
+        } else if (tokenizer.tokenType() == JackTokenizer.Type.SYMBOL && tokenizer.symbol() == '~') { // unaryOp not | DONE
+            tokenizer.advance(); // ~
+            compileTerm();
+            vmw.writeArithmetic("not");
+        } 
+        
+        else if (tokenizer.tokenType() == JackTokenizer.Type.SYMBOL && tokenizer.symbol() == '(') { // (expression) | DONE
+            
+            tokenizer.advance(); // (
+            compileExpression(); // expression
+            tokenizer.advance(); // )
 
         } else if (tokenizer.tokenType() == JackTokenizer.Type.IDENTIFIER) { // varName
-            w("<identifier> " + tokenizer.identifier() + " </identifier>");
+            
+            String varName = tokenizer.identifier();
+            SymbolTable.VarKind kind = st.KindOf(tokenizer.identifier());
+            int index = st.IndexOf(tokenizer.identifier());
+            String segment = switch (kind) {
+                case VAR -> "local";
+                case ARG -> "argument";
+                case FIELD -> "this";
+                case STATIC -> "static";
+                default -> "bruh :d";
+            };
+
             tokenizer.advance();
 
-            if (tokenizer.tokenType() == JackTokenizer.Type.SYMBOL) {
+            if (tokenizer.tokenType() == JackTokenizer.Type.SYMBOL) { // varName
                 switch (tokenizer.symbol()) {
-                    case '[' -> { // varName[]
-                        vmw.writePush("Array.new", 1);
-                        tokenizer.advance();
-                        compileExpression();
-                        w("<symbol> ] </symbol>");
-                        tokenizer.advance();
+                    case '[' -> { // varName[x]
+                        tokenizer.advance(); // '['
+                        compileExpression(); // expression
+                        tokenizer.advance(); // ']'
+                        
+                        vmw.writePush(segment, index);
+                        vmw.writeArithmetic("add");
+                        vmw.writePop("pointer", 1);
+                        vmw.writePush("that", 0);
                     }
                     case '(' -> { // varName() 
-                        w("<symbol> ( </symbol>");
-                        tokenizer.advance();
-                        compileExpressionList();
-                        w("<symbol> ) </symbol>");
-                        tokenizer.advance();
+                        tokenizer.advance(); // '('
+                        int numArgs = compileExpressionList();
+                        tokenizer.advance(); // ')'
+
+                        vmw.writeCall(className + "." + varName, numArgs);
                     }
-                    case '.' -> { // varName. 
-                        w("<symbol> . </symbol>");
-                        tokenizer.advance();
-                        w("<identifier> " + tokenizer.identifier() + " </identifier>");
-                        tokenizer.advance();
-                        w("<symbol> ( </symbol>");
-                        tokenizer.advance();
-                        compileExpressionList();
-                        w("<symbol> ) </symbol>");
-                        tokenizer.advance();
+                    case '.' -> {
+                    
+                        tokenizer.advance(); // '.'
+                        String methodName = tokenizer.identifier();
+                        tokenizer.advance(); // methodName
+                        tokenizer.advance(); // '('
+                    
+                        int numArgs = 0;
+                    
+                        if (st.KindOf(varName) != SymbolTable.VarKind.NONE) {
+                            vmw.writePush(segment, index); // push object reference
+                            numArgs = 1;
+                            varName = st.TypeOf(varName); // class name of the object
+                        }
+                    
+                        numArgs += compileExpressionList();
+                        tokenizer.advance(); // skip ')'
+                    
+                        vmw.writeCall(varName + "." + methodName, numArgs);
                     }
-                    default -> {}
+                    
+                    default -> { // just varName
+                       vmw.writePush(segment, index);
+                    }
                 }
             }
         }
-
-        w("</term>");
     }
 
     private int compileExpressionList() {
