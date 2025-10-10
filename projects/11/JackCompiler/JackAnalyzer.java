@@ -64,7 +64,8 @@ class JackAnalyzer {
             System.out.println();
         } 
         catch (Exception e) {
-            System.out.println("JackAnalyzer.processTokenizer() error");
+            System.out.println("JackAnalyzer.processTokenizer() error: " + e);
+            // how does one achieve ts error mane xd
         }
 	}
 }

@@ -13,6 +13,7 @@ public class VMWriter {
             labelPrefix = outputFile.getName().replaceFirst("(?i)\\.vm$", "");
         } catch (Exception e){
             // theres no way ts breaking man im not writing a catch
+            System.out.print("SQUAK");
         }
     }
 
@@ -21,6 +22,7 @@ public class VMWriter {
             fw.write(s + "\n");
         } catch (Exception e){
             // theres no way ts breaking man im not writing a catch
+            System.out.print("SQUAK");
         }
     }
 
@@ -54,8 +56,8 @@ public class VMWriter {
         w("call " + name + " " + nArgs);
     }
 
-    public void writeFunction(String name, int nLocals){ // Writes a VM function command.
-        w("function " + name + " " + nLocals);
+    public void writeFunction(String className, String functionName, int nLocals){ // Writes a VM function command.
+        w("function " + className + "." + functionName + " " + nLocals);
     }
 
     public void writeReturn(){ // Writes a VM return command.

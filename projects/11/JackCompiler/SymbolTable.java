@@ -49,6 +49,14 @@ public class SymbolTable {
     // Defines a new identifier of a given name, type, and kind and issigns it a running index
     // STATIC and FIELD identifiers have a class scope, while ARG and VAR identifiers have a subroutine scope.
     public void Define(String name, String type, VarKind kind){
+
+        System.out.println(
+            "NEW VARIABLE: \n" +
+            "   name: " + name + "\n" + 
+            "   type: " + type + "\n" + 
+            "   VarKind: " + kind + "\n"
+        );
+
         VarData d;
         switch(kind){
             case STATIC -> {
@@ -87,7 +95,8 @@ public class SymbolTable {
         } else if (classVars.containsKey(name)){
             return classVars.get(name).kind;
         } else {
-            System.out.println("someting wong :()");
+            System.out.println("\nBad Kind");
+            errorReport(name);
             return VarKind.NONE;
         }
     }
@@ -98,7 +107,8 @@ public class SymbolTable {
         } else if (classVars.containsKey(name)){
             return classVars.get(name).type;
         } else  {
-            System.out.println("someting wong :()");
+            System.out.println("\nBad Type");
+            errorReport(name);
             return "";
         }
     }
@@ -109,8 +119,18 @@ public class SymbolTable {
         } else if (classVars.containsKey(name)){
             return classVars.get(name).index;
         } else {
-            System.out.println("someting wong :()");
+            System.out.println("\nBad Index");
+            errorReport(name);
             return -1;
         }
+    }
+
+    private void errorReport(String name){
+        System.out.println(
+        "Error: " + name + "\n" +
+        "staticCount: " + staticCount + "\n" +
+        "fieldCount: " + fieldCount + "\n" +
+        "argCount: " + argCount + "\n" +
+        "varCount: " + varCount);
     }
 }

@@ -37,12 +37,15 @@ public class CompilationEngine {
     public CompilationEngine(String inputFile, String outputFile) {
         try {
             tokenizer = new JackTokenizer(new FileReader(inputFile));
-            writer = new BufferedWriter(new FileWriter(outputFile));
-            compileClass();
-            writer.write("\n// ELI'S TRANSLATED FILE BTW");
             st = new SymbolTable();
             vmw = new VMWriter(outputFile);
-            writer.close(); // TEMPORARY
+
+            compileClass(); // stupid davin
+            
+
+            vmw.close();
+            
+
         } catch (IOException e) {
             System.out.println("error compilation engine constructor: " + e);
         }
@@ -55,10 +58,9 @@ public class CompilationEngine {
 
     private void w(String s) {
         try {
-            writer.write(s);
-
-            writer.write("\n");
-        } catch (IOException e) {
+            vmw.w(s);
+            vmw.w("\n");
+        } catch (Exception e) {
             System.out.println("w() error: " + e);
         }
     }
@@ -68,6 +70,9 @@ public class CompilationEngine {
      * using recursive descent parsing. *
      */
     public void compileClass() {
+
+        System.out.println("compileClass()\n");
+
         // 'class'
         tokenizer.advance();
         
@@ -109,6 +114,8 @@ public class CompilationEngine {
 
     private void compileClassVarDec() {
         // ('static' | 'field') type varName (',' varName)* ';'
+
+        System.out.println("compileClassVarDec()\n");
 
         // kind = static or field
         SymbolTable.VarKind kind;
@@ -156,6 +163,9 @@ public class CompilationEngine {
      * (subroutineBody), both of which are defined. *
      */
     private void compileSubroutine() {
+
+        System.out.println("compileSubroutine()\n");
+
         // subroutine:			subroutineDec subroutineBody
         // 		subroutineDec:	('constructor' | 'function' | 'method')
         //						('void' | type) subroutineName '(' parameterList ')'
@@ -166,11 +176,13 @@ public class CompilationEngine {
         st.startSubroutine();
 
         String subKind = tokenizer.keyWord(); // constructor, function, or method
+        System.out.println("subKind = " + subKind);
         tokenizer.advance();
 
         tokenizer.advance(); // 'void' | 'type'
 
-        String subName = tokenizer.keyWord(); // subroutineName
+        String subName = tokenizer.identifier(); // subroutineName
+        System.out.println("subName = " + subName);
         tokenizer.advance();
 
         tokenizer.advance(); // '('
@@ -189,7 +201,7 @@ public class CompilationEngine {
 
         // vm function declaration
         int numLocals = st.VarCount(SymbolTable.VarKind.VAR);
-        vmw.writeFunction(className + "." + subName, numLocals);
+        vmw.writeFunction(className, subName, numLocals);
 
         // constructor/method setup
         if (subKind.equals("constructor")) {
@@ -211,6 +223,9 @@ public class CompilationEngine {
 
 
     private void compileParameterList(boolean isMethod) {
+
+        System.out.println("compileParameter()\n");
+
 
         // if method, add "this" as first arg
         if (isMethod) {
@@ -250,6 +265,8 @@ public class CompilationEngine {
 
     private void compileVarDec() {
 
+        System.out.println("compileVarDec()\n");
+
         tokenizer.advance(); // 'var'
 
         String type; // type
@@ -281,6 +298,8 @@ public class CompilationEngine {
 
     private void compileStatements() {
 
+        System.out.println("compileStatements()\n");
+
         while (tokenizer.tokenType() == JackTokenizer.Type.KEYWORD) {
             String keyword = tokenizer.keyWord();
             switch (keyword) {
@@ -297,6 +316,8 @@ public class CompilationEngine {
     }
 
     private void compileDo() {
+
+        System.out.println("compileDo()\n");
         
         tokenizer.advance(); // 'do'
 
@@ -316,19 +337,12 @@ public class CompilationEngine {
             if (st.KindOf(name) != SymbolTable.VarKind.NONE) {
 
                 String type = st.TypeOf(name);
-                String segment;
+                String segment = kindToSegment(st.KindOf(name));
 
-                segment = switch(st.KindOf(name)) {
-                    case VAR -> "local";
-                    case ARG -> "argument";
-                    case FIELD -> "this";
-                    case STATIC -> "static";
-                    default -> "bruh!";
-                };
 
                 // push object reference as arg0
                 vmw.writePush(segment, st.IndexOf(name));
-                numArgs++;
+                numArgs = 1;
                 subroutineName = type + "." + name2; // method call on object type
 
             } else {
@@ -361,6 +375,9 @@ public class CompilationEngine {
 
 
     private void compileLet() {
+
+        System.out.println("compileLet()\n");
+
         // letStatement:  'let' varName ('[' expression ']')? '=' expression ';'
         
         boolean isArray = false;
@@ -380,14 +397,10 @@ public class CompilationEngine {
     
             // push base address of varName
             SymbolTable.VarKind kind = st.KindOf(varName);
+
             int index = st.IndexOf(varName);
-            String segment = switch (kind) {
-                case VAR -> "local";
-                case ARG -> "argument";
-                case FIELD -> "this";
-                case STATIC -> "static";
-                default -> "bruh :d";
-            };
+            String segment = kindToSegment(st.KindOf(varName));
+
 
             vmw.writePush(segment, index);
     
@@ -417,15 +430,7 @@ public class CompilationEngine {
             vmw.writePop("that", 0);     // store into arr[i]
         } else {
 
-            String segment;
-
-            segment = switch(st.KindOf(varName)) {
-                case VAR -> "local";
-                case ARG -> "argument";
-                case FIELD -> "this";
-                case STATIC -> "static";
-                default -> "bruh!";
-            };
+            String segment = kindToSegment(st.KindOf(varName));
 
             vmw.writePop(segment, st.IndexOf(varName));
         }
@@ -434,6 +439,8 @@ public class CompilationEngine {
     private int whileCounter = 0;
 
     private void compileWhile() {
+
+        System.out.println("compileWhile()\n");
 
         // whileStatement:  'while' '('  expression ')' '{' statements '}'
         int thisWhile = whileCounter++;
@@ -471,6 +478,9 @@ public class CompilationEngine {
 
 
     private void compileReturn() {
+
+        System.out.println("compileReturn()\n");
+
             
         // returnStatement:	'return' expression? ';'
 
@@ -492,6 +502,9 @@ public class CompilationEngine {
     private int ifCounter = 0;
 
     private void compileIf() {
+
+        System.out.println("compileIf()\n");
+
 
         // ifStatement:  'if' '(' expression ')' '{' statements '}'
         //				('else' '{' statements '}')?
@@ -533,6 +546,9 @@ public class CompilationEngine {
 
 
     private void compileExpression() {
+
+        System.out.println("compileExpression()\n");
+
 
         // expression:	term (op term)*
 
@@ -587,6 +603,8 @@ public class CompilationEngine {
         //			varName | varName '[' expression ']' | subroutineCall |
         //			'(' expression ')' | unaryOp term
 
+        System.out.println("compileTerm()\n");
+
         if (tokenizer.tokenType() == JackTokenizer.Type.INT_CONSTANT) { // integerConstant | DONE
             vmw.writePush("constant", tokenizer.intVal());
             tokenizer.advance();
@@ -632,21 +650,17 @@ public class CompilationEngine {
         } else if (tokenizer.tokenType() == JackTokenizer.Type.IDENTIFIER) { // varName
             
             String varName = tokenizer.identifier();
-            SymbolTable.VarKind kind = st.KindOf(tokenizer.identifier());
-            int index = st.IndexOf(tokenizer.identifier());
-            String segment = switch (kind) {
-                case VAR -> "local";
-                case ARG -> "argument";
-                case FIELD -> "this";
-                case STATIC -> "static";
-                default -> "bruh :d";
-            };
-
+            
             tokenizer.advance();
-
-            if (tokenizer.tokenType() == JackTokenizer.Type.SYMBOL) { // varName
+            
+            if (tokenizer.tokenType() == JackTokenizer.Type.SYMBOL) {
                 switch (tokenizer.symbol()) {
                     case '[' -> { // varName[x]
+
+                        SymbolTable.VarKind kind = st.KindOf(varName);
+                        int index = st.IndexOf(varName);
+                        String segment = kindToSegment(kind);
+
                         tokenizer.advance(); // '['
                         compileExpression(); // expression
                         tokenizer.advance(); // ']'
@@ -656,43 +670,66 @@ public class CompilationEngine {
                         vmw.writePop("pointer", 1);
                         vmw.writePush("that", 0);
                     }
+
                     case '(' -> { // varName() 
                         tokenizer.advance(); // '('
-                        int numArgs = compileExpressionList();
+                        vmw.writePush("pointer", 0);
+                        int numArgs = 1 + compileExpressionList();
                         tokenizer.advance(); // ')'
-
                         vmw.writeCall(className + "." + varName, numArgs);
                     }
+
                     case '.' -> {
-                    
                         tokenizer.advance(); // '.'
                         String methodName = tokenizer.identifier();
                         tokenizer.advance(); // methodName
+
+                        System.out.println("methodName: " + methodName);
                         tokenizer.advance(); // '('
                     
+                        // varName = variable | class
+                        SymbolTable.VarKind kind = st.KindOf(varName);
+                        int index = st.IndexOf(varName);
                         int numArgs = 0;
                     
-                        if (st.KindOf(varName) != SymbolTable.VarKind.NONE) {
-                            vmw.writePush(segment, index); // push object reference
+                        if (kind != SymbolTable.VarKind.NONE) {
+                            // instance method call
+                            String segment = kindToSegment(kind);
+                            vmw.writePush(segment, index);
                             numArgs = 1;
-                            varName = st.TypeOf(varName); // class name of the object
+                            varName = st.TypeOf(varName);
                         }
                     
                         numArgs += compileExpressionList();
-                        tokenizer.advance(); // skip ')'
                     
+                        tokenizer.advance(); // ')'
+
                         vmw.writeCall(varName + "." + methodName, numArgs);
                     }
                     
+                    
                     default -> { // just varName
-                       vmw.writePush(segment, index);
+
+                        SymbolTable.VarKind kind = st.KindOf(varName);
+                        int index = st.IndexOf(varName);
+                        String segment = kindToSegment(kind);
+
+                        vmw.writePush(segment, index);
                     }
                 }
+            } else {
+                SymbolTable.VarKind kind = st.KindOf(varName);
+                int index = st.IndexOf(varName);
+                String segment = kindToSegment(kind);
+                vmw.writePush(segment, index);
             }
         }
     }
 
     private int compileExpressionList() {
+
+        System.out.println("compileExpressionList()\n");
+
         int count = 0;
 
         // check for empty expression list
@@ -709,4 +746,15 @@ public class CompilationEngine {
 
         return count;
     }
+
+    private String kindToSegment(SymbolTable.VarKind kind) {
+        return switch (kind) {
+            case VAR -> "local";
+            case ARG -> "argument";
+            case FIELD -> "this";
+            case STATIC -> "static";
+            default -> throw new RuntimeException("Invalid var kind: " + kind);
+        };
+    }
+
 }
