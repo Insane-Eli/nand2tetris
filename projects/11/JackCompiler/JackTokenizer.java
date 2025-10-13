@@ -69,6 +69,8 @@ public class JackTokenizer {
      */
     public JackTokenizer(FileReader inputFile) {
 
+        System.out.println("DONE");
+
         input = "";
         cursor = 0;
 
@@ -79,11 +81,11 @@ public class JackTokenizer {
                 
                 while ((currentLine = br.readLine()) != null) {
                     input += currentLine + "\n";
-                    System.out.println("current line: " + currentLine);
+                    //System.out.println(currentLine);
                 }
             }
 
-            System.out.println("compilation finished");
+            System.out.println("Tokenizing complete!");
 
         } catch (IOException e) {
             System.out.print("jack tokenizer constructor error: " + e);

@@ -3,7 +3,7 @@ import java.io.*;
 
 
 /**
- * @author tha one and only TOP SHOTTA Eli "Insane Eli" Currah (fan-made name) + chatgpt ah ahhaha ha
+ * @author tha one and only TOP SHOTTA Eli "Insane Eli" Currah (fan-made name)
  * CompilationEngine will serve as the focus for most of the compilers
  * functionality. Based on the grammar delineated in section 10.3.3, each method
  * will output XML and make appropriate calls to other methods. This recursive
@@ -19,15 +19,20 @@ import java.io.*;
  */
 public class CompilationEngine {
 
+    public static int tab;
+    public static void print(String s){
+        
+        for(int i = 0; i < tab; i++){
+            System.out.print("   ");
+        }
+
+        System.out.print(s);
+    }
+
     private JackTokenizer tokenizer;
-    private BufferedWriter writer;
     private SymbolTable st;
     private VMWriter vmw;
     private String className;
-
-    public void debug(String keyword) {
-        System.out.println("\tkeyword: " + keyword);
-    }
 
     /**
      * @param input Jack file The CompilationEngine will create a new
@@ -35,16 +40,24 @@ public class CompilationEngine {
      * stream to outputFile. *
      */
     public CompilationEngine(String inputFile, String outputFile) {
+        System.out.println("DONE");
+
         try {
+            System.out.print("Creating new Tokenizer... ");
             tokenizer = new JackTokenizer(new FileReader(inputFile));
+
+            System.out.print("Creating new SymbolTable... ");
             st = new SymbolTable();
+
+            System.out.print("Creating new VMWriter... ");
             vmw = new VMWriter(outputFile);
+            System.out.println();
+
+            tab = 0;
 
             compileClass(); // stupid davin
             
-
-            vmw.close();
-            
+            vmw.close();            
 
         } catch (IOException e) {
             System.out.println("error compilation engine constructor: " + e);
@@ -56,22 +69,13 @@ public class CompilationEngine {
 			final stages of compileClass(). */
     }
 
-    private void w(String s) {
-        try {
-            vmw.w(s);
-            vmw.w("\n");
-        } catch (Exception e) {
-            System.out.println("w() error: " + e);
-        }
-    }
-
     /**
      * compileClass() is the only public method. All other methods are called
      * using recursive descent parsing. *
      */
     public void compileClass() {
 
-        System.out.println("compileClass()\n");
+        print("Compiling class: ");
 
         // 'class'
         tokenizer.advance();
@@ -79,6 +83,9 @@ public class CompilationEngine {
         // className
         tokenizer.advance();
         className = tokenizer.identifier(); // save class name for later
+
+        System.out.println(className);
+        tab++;
 
         // '{'
         tokenizer.advance();
@@ -98,6 +105,8 @@ public class CompilationEngine {
 
         // '}'
         tokenizer.advance();
+
+        tab--;
         
         /* The general procedure for any "compile" method is to handle each terminal
         in order according to the Jack grammar. When a non-terminal is encountered,
@@ -115,7 +124,7 @@ public class CompilationEngine {
     private void compileClassVarDec() {
         // ('static' | 'field') type varName (',' varName)* ';'
 
-        System.out.println("compileClassVarDec()\n");
+        print("Compiling class variable: ");
 
         // kind = static or field
         SymbolTable.VarKind kind;
@@ -137,6 +146,7 @@ public class CompilationEngine {
 
         // first varName
         String varName = tokenizer.identifier();
+        System.out.println(varName);
         st.Define(varName, type, kind); 
         tokenizer.advance();
 
@@ -144,6 +154,8 @@ public class CompilationEngine {
         while (tokenizer.tokenType() == JackTokenizer.Type.SYMBOL && tokenizer.symbol() == ',') {
             tokenizer.advance();
             varName = tokenizer.identifier();
+            print("Compiling class variable: ");
+            System.out.println(varName);
             st.Define(varName, type, kind);
             tokenizer.advance();
         }
@@ -164,7 +176,7 @@ public class CompilationEngine {
      */
     private void compileSubroutine() {
 
-        System.out.println("compileSubroutine()\n");
+        print("Compiling: ");
 
         // subroutine:			subroutineDec subroutineBody
         // 		subroutineDec:	('constructor' | 'function' | 'method')
@@ -176,13 +188,13 @@ public class CompilationEngine {
         st.startSubroutine();
 
         String subKind = tokenizer.keyWord(); // constructor, function, or method
-        System.out.println("subKind = " + subKind);
+        System.out.print(subKind + " ");
         tokenizer.advance();
 
         tokenizer.advance(); // 'void' | 'type'
 
         String subName = tokenizer.identifier(); // subroutineName
-        System.out.println("subName = " + subName);
+        System.out.println(subName + " ");
         tokenizer.advance();
 
         tokenizer.advance(); // '('

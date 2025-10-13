@@ -8,10 +8,13 @@ public class VMWriter {
 
     public VMWriter(String outputFilePath){ // Creates a new file and prepares it for writing.
         try {
+
+            System.out.println("DONE");
+
             outputFile = new File(outputFilePath);
             fw = new FileWriter(outputFile);
             labelPrefix = outputFile.getName().replaceFirst("(?i)\\.vm$", "");
-        } catch (Exception e){
+        } catch (IOException e){
             // theres no way ts breaking man im not writing a catch
             System.out.print("SQUAK");
         }
@@ -19,8 +22,9 @@ public class VMWriter {
 
     public void w(String s){
         try {
+            System.out.println(s);
             fw.write(s + "\n");
-        } catch (Exception e){
+        } catch (IOException e){
             // theres no way ts breaking man im not writing a catch
             System.out.print("SQUAK");
         }
@@ -66,8 +70,9 @@ public class VMWriter {
 
     public void close(){ // Closes the output file
         try{
+            System.out.println("closing vmwriter!!!");
             fw.close();
-        } catch (Exception e){
+        } catch (IOException e){
             // it wont happen bro trust
         }
     }

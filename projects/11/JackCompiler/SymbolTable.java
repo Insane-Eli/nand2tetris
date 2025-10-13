@@ -30,6 +30,9 @@ public class SymbolTable {
     public int varCount;
 
     public SymbolTable(){ // Creates a new empty symbol table.
+
+        System.out.println("DONE");
+
         classVars = new Hashtable<>();
         subroutineVars = new Hashtable<>();
 
@@ -49,13 +52,6 @@ public class SymbolTable {
     // Defines a new identifier of a given name, type, and kind and issigns it a running index
     // STATIC and FIELD identifiers have a class scope, while ARG and VAR identifiers have a subroutine scope.
     public void Define(String name, String type, VarKind kind){
-
-        System.out.println(
-            "NEW VARIABLE: \n" +
-            "   name: " + name + "\n" + 
-            "   type: " + type + "\n" + 
-            "   VarKind: " + kind + "\n"
-        );
 
         VarData d;
         switch(kind){

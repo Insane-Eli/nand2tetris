@@ -12,6 +12,7 @@ import java.io.*;
 class JackAnalyzer {
 
     public static FileWriter fw;
+    public static String shortOutputFileName;
 
     public static void main(String[] args) {
         // Check that we have an argument, otherwise, error out
@@ -47,9 +48,19 @@ class JackAnalyzer {
     private static void translateFile(File jackFile) {
         // Otherwise, process the individual file using either processTokenizer() for
         // Stage 1 or process() for Stage 2 of the Chapter 10 projects.
-        String sourceFilename = jackFile.getPath();
-        String outputFilename = jackFile.getPath().replace(".jack", ".vm");
-        processTokenizer(sourceFilename, outputFilename);
+        String sourceFileName = jackFile.getPath();
+        String outputFileName = jackFile.getPath().replace(".jack", ".vm");
+        shortOutputFileName = jackFile.getName().replace(".jack", ".vm");
+        headerLine();
+        System.out.println("Now compiling: " + sourceFileName + "\n");
+        processTokenizer(sourceFileName, outputFileName);
+    }
+
+    public static void headerLine(){
+        for(int i = 0; i < 20; i++){
+            System.out.print("-----");
+        }
+        System.out.println();
     }
 
 
@@ -58,14 +69,11 @@ class JackAnalyzer {
 		of XML output as defined in Section 10.5 Stage 1.
      */
     private static void processTokenizer(String sourceFileName, String outputFileName) {
-
         try {
-            CompilationEngine engine = new CompilationEngine(sourceFileName, outputFileName);
-            System.out.println();
-        } 
-        catch (Exception e) {
+            System.out.print("Creating new CompilationEngine() for " + shortOutputFileName + "... ");
+            CompilationEngine engine = new CompilationEngine(sourceFileName, outputFileName);        
+        } catch (Exception e) {
             System.out.println("JackAnalyzer.processTokenizer() error: " + e);
-            // how does one achieve ts error mane xd
         }
 	}
 }
