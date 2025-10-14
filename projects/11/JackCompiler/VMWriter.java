@@ -15,18 +15,17 @@ public class VMWriter {
             fw = new FileWriter(outputFile);
             labelPrefix = outputFile.getName().replaceFirst("(?i)\\.vm$", "");
         } catch (IOException e){
-            // theres no way ts breaking man im not writing a catch
-            System.out.print("SQUAK");
+            System.out.print("vmwriter 1");
         }
     }
 
     public void w(String s){
         try {
-            System.out.println(s);
+            //System.out.println(s);
             fw.write(s + "\n");
         } catch (IOException e){
             // theres no way ts breaking man im not writing a catch
-            System.out.print("SQUAK");
+            System.out.print("vmwriter 2");
         }
     }
 
@@ -73,7 +72,7 @@ public class VMWriter {
             System.out.println("closing vmwriter!!!");
             fw.close();
         } catch (IOException e){
-            // it wont happen bro trust
+            System.out.print("vmw close broke");
         }
     }
 }
