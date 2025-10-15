@@ -144,7 +144,8 @@ push constant 140
 eq
 not
 if-goto PongGame$IF_FALSE2
-push constant -1
+push constant 1
+neg
 pop this 3
 goto PongGame$IF_END2
 label PongGame$IF_FALSE2

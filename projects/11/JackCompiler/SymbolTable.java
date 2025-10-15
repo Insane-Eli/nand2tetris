@@ -91,8 +91,8 @@ public class SymbolTable {
         } else if (classVars.containsKey(name)){
             return classVars.get(name).kind;
         } else {
-            // System.out.println("\nBad Kind");
-            // errorReport(name);
+            System.out.println("\nBad Kind");
+            errorReport(name);
             return VarKind.NONE;
         }
     }
@@ -103,8 +103,8 @@ public class SymbolTable {
         } else if (classVars.containsKey(name)){
             return classVars.get(name).type;
         } else  {
-            // System.out.println("\nBad Type");
-            // errorReport(name);
+            System.out.println("\nBad Type");
+            errorReport(name);
             return "";
         }
     }
@@ -115,8 +115,8 @@ public class SymbolTable {
         } else if (classVars.containsKey(name)){
             return classVars.get(name).index;
         } else {
-            // System.out.println("\nBad Index");
-            // errorReport(name); // lets just turn this off for now
+            System.out.println("\nBad Index");
+            errorReport(name); // lets just turn this off for now
             return -1;
         }
     }

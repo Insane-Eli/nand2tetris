@@ -25,13 +25,13 @@ public class CompilationEngine {
 
     private static void print(String s){
         
-        for(int i = 0; i < tabs-1; i++){
-            System.out.print(hasMoreBranches.get(i) ? "│  " : "░░░");
-        }
+        // for(int i = 0; i < tabs-1; i++){
+        //     System.out.print(hasMoreBranches.get(i) ? "   " : "   "); // "░░░");
+        // }
         
         // System.out.print("checking out index: " + (hasMoreBranches.size()-1) + " which reads: " + hasMoreBranches.get(hasMoreBranches.size()-1));
 
-        if(tabs != 0) System.out.print(hasMoreBranches.get(tabs-1) ?  "├─ " : "└─ ");
+        // if(tabs != 0) System.out.print(hasMoreBranches.get(tabs-1) ?  "├─ " : "└─ ");
 
         System.out.print(s);
     }
@@ -102,20 +102,20 @@ public class CompilationEngine {
 
         hasMoreBranches.set(tabs, true);
         
+        tabs++;
+
         while (tokenizer.tokenType() == JackTokenizer.Type.KEYWORD && (tokenizer.keyWord().equals("static") || tokenizer.keyWord().equals("field"))) {
-            tabs++;
             compileClassVarDec();
-            tabs--;
         }
 
-        hasMoreBranches.set(tabs, false);
 
         // subroutineDec (constructor | function | method)
         while (tokenizer.tokenType() == JackTokenizer.Type.KEYWORD && (tokenizer.keyWord().equals("constructor") || tokenizer.keyWord().equals("function") || tokenizer.keyWord().equals("method"))) {
-            tabs++;
             compileSubroutine();
-            tabs--;
         }
+        
+
+        tabs--;
         
         // '}'
         tokenizer.advance();
@@ -345,7 +345,7 @@ public class CompilationEngine {
 
     private void compileStatements() {
 
-        print("Compiling statement:\n");
+        print("Compiling statements:\n");
 
         tabs++; 
 
@@ -541,6 +541,8 @@ public class CompilationEngine {
 
     private void compileReturn() {
 
+        hasMoreBranches.set(tabs-1, false);
+
         print("Compiling return: return \n");
 
             
@@ -680,8 +682,18 @@ public class CompilationEngine {
         print("Compiling term: ");
 
         if (tokenizer.tokenType() == JackTokenizer.Type.INT_CONSTANT) { // integerConstant | DONE
-            vmw.writePush("constant", tokenizer.intVal());
-            System.out.println(tokenizer.intVal());
+
+            System.out.println("NUMBER!!!");
+           
+            if(tokenizer.intVal() >= 0){
+                System.out.println(tokenizer.intVal() + "IS POSITIVE");
+                vmw.writePush("constant", tokenizer.intVal());
+            } else {
+                System.out.println(tokenizer.intVal() + "IS NEGATIVE");
+                vmw.writePush("constant", tokenizer.intVal()*(-1));
+                vmw.writeArithmetic("neg");
+            }
+
             tokenizer.advance();
 
         } else if (tokenizer.tokenType() == JackTokenizer.Type.STRING_CONSTANT) { // stringConstant | DONE
@@ -701,7 +713,7 @@ public class CompilationEngine {
         } else if (tokenizer.tokenType() == JackTokenizer.Type.KEYWORD) { // keywordConstant | DONE
 
             switch(tokenizer.keyWord()){
-                case "true" -> vmw.writePush("constant", -1);
+                case "true" -> {vmw.writePush("constant", 1); vmw.writeArithmetic("neg");}
                 case "false", "null" -> vmw.writePush("constant", 0);
                 case "this" -> vmw.writePush("pointer", 0);
             }
@@ -823,7 +835,9 @@ public class CompilationEngine {
                     }
                 }
             } else {
-                System.out.println();
+
+
+                System.out.println("YABBA DABBA DOO!!!");
 
                 SymbolTable.VarKind kind = st.KindOf(varName);
                 int index = st.IndexOf(varName);

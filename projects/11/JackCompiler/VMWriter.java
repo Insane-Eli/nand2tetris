@@ -21,7 +21,7 @@ public class VMWriter {
 
     public void w(String s){
         try {
-            //System.out.println(s);
+            System.out.println(s);
             fw.write(s + "\n");
         } catch (IOException e){
             // theres no way ts breaking man im not writing a catch
