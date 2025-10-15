@@ -31,7 +31,7 @@ public class SymbolTable {
 
     public SymbolTable(){ // Creates a new empty symbol table.
 
-        System.out.println("DONE");
+        System.out.println("DONE!");
 
         classVars = new Hashtable<>();
         subroutineVars = new Hashtable<>();

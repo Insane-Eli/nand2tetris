@@ -9,7 +9,7 @@ public class VMWriter {
     public VMWriter(String outputFilePath){ // Creates a new file and prepares it for writing.
         try {
 
-            System.out.println("DONE");
+            System.out.println("DONE!");
 
             outputFile = new File(outputFilePath);
             fw = new FileWriter(outputFile);

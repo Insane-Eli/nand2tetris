@@ -21,19 +21,17 @@ import java.util.*;
 public class CompilationEngine {
 
     private static int tabs;
-    private static List<Boolean> hasMoreBranches = new ArrayList<>();
-
+    private static BitSet hasMoreBranches = new BitSet();
 
     private static void print(String s){
         
         for(int i = 0; i < tabs-1; i++){
-            System.out.print(hasMoreBranches.get(i) ? "   " : "│  ");
+            System.out.print(hasMoreBranches.get(i) ? "│  " : "░░░");
         }
+        
+        // System.out.print("checking out index: " + (hasMoreBranches.size()-1) + " which reads: " + hasMoreBranches.get(hasMoreBranches.size()-1));
 
-        if(tabs != 0){
-            System.out.print(hasMoreBranches.get(hasMoreBranches.size()-1) ?  "├──" : "└──");
-        }
-
+        if(tabs != 0) System.out.print(hasMoreBranches.get(tabs-1) ?  "├─ " : "└─ ");
 
         System.out.print(s);
     }
@@ -49,7 +47,7 @@ public class CompilationEngine {
      * stream to outputFile. *
      */
     public CompilationEngine(String inputFile, String outputFile) {
-        System.out.println("DONE");
+        System.out.println("DONE!");
 
         try {
             System.out.print("Creating new Tokenizer... ");
@@ -84,7 +82,6 @@ public class CompilationEngine {
 
         tabs = 0;
         hasMoreBranches.clear();
-        hasMoreBranches.add(true);
 
         print("Compiling class: ");
 
@@ -102,19 +99,24 @@ public class CompilationEngine {
 
         // classVarDec (static | field)
         tokenizer.advance();
+
+        hasMoreBranches.set(tabs, true);
+        
         while (tokenizer.tokenType() == JackTokenizer.Type.KEYWORD && (tokenizer.keyWord().equals("static") || tokenizer.keyWord().equals("field"))) {
-            tabs++; hasMoreBranches.add(true);
+            tabs++;
             compileClassVarDec();
-            tabs--; hasMoreBranches.remove(hasMoreBranches.size()-1);
+            tabs--;
         }
+
+        hasMoreBranches.set(tabs, false);
 
         // subroutineDec (constructor | function | method)
         while (tokenizer.tokenType() == JackTokenizer.Type.KEYWORD && (tokenizer.keyWord().equals("constructor") || tokenizer.keyWord().equals("function") || tokenizer.keyWord().equals("method"))) {
-            tabs++; hasMoreBranches.add(true);
+            tabs++;
             compileSubroutine();
-            tabs--; hasMoreBranches.remove(hasMoreBranches.size()-1);
+            tabs--;
         }
-
+        
         // '}'
         tokenizer.advance();
         
@@ -208,9 +210,9 @@ public class CompilationEngine {
         tokenizer.advance();
 
         tokenizer.advance(); // '('
-        tabs++; hasMoreBranches.add(true);
+        tabs++; 
         compileParameterList(subKind.equals("method"));
-        tabs--; hasMoreBranches.remove(hasMoreBranches.size()-1);
+        tabs--; 
         tokenizer.advance(); // ')'
 
 
@@ -218,11 +220,11 @@ public class CompilationEngine {
         // since we need subKind in the implementation and it's relatively short, it's easier to just get rid of compileSubroutineBody() and throw the logic in here
         tokenizer.advance(); // '{'
 
-        tabs++; hasMoreBranches.add(true);
+        tabs++; 
         while (tokenizer.tokenType() == JackTokenizer.Type.KEYWORD && tokenizer.keyWord().equals("var")) { // varDec* statements
             compileVarDec();
         }
-        tabs--; hasMoreBranches.remove(hasMoreBranches.size()-1);
+        tabs--; 
 
 
         // vm function declaration
@@ -241,7 +243,9 @@ public class CompilationEngine {
             vmw.writePop("pointer", 0); // this = argument 0
         }
 
+        tabs++; 
         compileStatements();
+        tabs--;
 
         tokenizer.advance(); // '}'
     }
@@ -251,25 +255,29 @@ public class CompilationEngine {
     private void compileParameterList(boolean isMethod) {
 
         print("Compiling Parameter list: ");
-        System.out.println();
 
         // if method, add "this" as first arg
         if (isMethod) {
             st.Define("this", className, SymbolTable.VarKind.ARG);
         }
 
+        System.out.print("(");
+
         // parameterList: ((type varName) (',' type varName)*)?
         if (tokenizer.tokenType() == JackTokenizer.Type.KEYWORD || tokenizer.tokenType() == JackTokenizer.Type.IDENTIFIER) {
-
+            
             while (true) {
 
                 String type; // type
+
 
                 if (tokenizer.tokenType() == JackTokenizer.Type.KEYWORD) {
                     type = tokenizer.keyWord(); // int, boolean, char, void
                 } else {
                     type = tokenizer.identifier(); // class type
                 }
+
+                System.out.print(type);
 
                 tokenizer.advance();
 
@@ -278,14 +286,21 @@ public class CompilationEngine {
                 st.Define(name, type, SymbolTable.VarKind.ARG);
                 tokenizer.advance();
 
+                System.out.print(name);
+
                 // if more commas continue, otherwise break
                 if (tokenizer.tokenType() == JackTokenizer.Type.SYMBOL && tokenizer.symbol() == ',') {
+                    System.out.print(", ");
                     tokenizer.advance();
                 } else {
                     break;
                 }
             }
+
         }
+
+        System.out.println(")");
+
     }
 
 
@@ -301,22 +316,28 @@ public class CompilationEngine {
         } else {
             type = tokenizer.identifier(); // class type
         }
+
+        System.out.print(type + " ");
+
         tokenizer.advance();
 
         // varName
         String name = tokenizer.identifier();
+        System.out.print(name);
         st.Define(name, type, SymbolTable.VarKind.VAR); // add local to symbol table
         tokenizer.advance();
 
         // ", varName"*
-        while (tokenizer.tokenType() == JackTokenizer.Type.SYMBOL &&
-            tokenizer.symbol() == ',') {
+        while (tokenizer.tokenType() == JackTokenizer.Type.SYMBOL && tokenizer.symbol() == ',') {
             tokenizer.advance(); // ','
 
             name = tokenizer.identifier();
             st.Define(name, type, SymbolTable.VarKind.VAR); // add the extra locals
+            System.out.print(", " + name);
             tokenizer.advance();
         }
+
+        System.out.println();
 
         tokenizer.advance(); // ';'
     }
@@ -324,9 +345,9 @@ public class CompilationEngine {
 
     private void compileStatements() {
 
-        print("compileStatements()\n");
+        print("Compiling statement:\n");
 
-        tabs++; hasMoreBranches.add(true);
+        tabs++; 
 
         while (tokenizer.tokenType() == JackTokenizer.Type.KEYWORD) {
             String keyword = tokenizer.keyWord();
@@ -342,13 +363,13 @@ public class CompilationEngine {
             }
         }
 
-        tabs--; hasMoreBranches.remove(hasMoreBranches.size()-1);
+        tabs--; 
 
     }
 
     private void compileDo() {
 
-        print("compileDo()\n");
+        print("Compiling do: do \n");
         
         tokenizer.advance(); // 'do'
 
@@ -407,7 +428,7 @@ public class CompilationEngine {
 
     private void compileLet() {
 
-        print("compileLet()\n");
+        print("Compiling let: let ");
 
         // letStatement:  'let' varName ('[' expression ']')? '=' expression ';'
         
@@ -418,6 +439,8 @@ public class CompilationEngine {
         // varName
         String varName = tokenizer.identifier();
         tokenizer.advance();
+
+        System.out.print(varName + " = \n");
 
         // [expression]?
         if (tokenizer.tokenType() == JackTokenizer.Type.SYMBOL && tokenizer.symbol() == '[') {
@@ -436,9 +459,9 @@ public class CompilationEngine {
             vmw.writePush(segment, index);
     
             // compile index expression
-            tabs++; hasMoreBranches.add(true);
+            tabs++; 
             compileExpression();
-            tabs--; hasMoreBranches.remove(hasMoreBranches.size()-1);
+            tabs--; 
     
             tokenizer.advance(); // ']'
     
@@ -450,9 +473,9 @@ public class CompilationEngine {
         tokenizer.advance();
 
         // expression
-        tabs++; hasMoreBranches.add(true);
+        tabs++; 
         compileExpression();
-        tabs--; hasMoreBranches.remove(hasMoreBranches.size()-1);
+        tabs--; 
 
         // ;
         tokenizer.advance();
@@ -475,7 +498,7 @@ public class CompilationEngine {
 
     private void compileWhile() {
 
-        print("compileWhile()\n");
+        print("Compiling while: while \n");
 
         // whileStatement:  'while' '('  expression ')' '{' statements '}'
         int thisWhile = whileCounter++;
@@ -486,9 +509,9 @@ public class CompilationEngine {
         vmw.writeLabel("WHILE_EXP" + thisWhile);
     
         // expression
-        tabs++; hasMoreBranches.add(true);
+        tabs++; 
         compileExpression();
-        tabs--; hasMoreBranches.remove(hasMoreBranches.size()-1);
+        tabs--; 
     
         tokenizer.advance(); // ')'
     
@@ -501,9 +524,9 @@ public class CompilationEngine {
         tokenizer.advance(); // '{'
     
         // statements
-        tabs++; hasMoreBranches.add(true);
+        tabs++; 
         compileStatements();
-        tabs--; hasMoreBranches.remove(hasMoreBranches.size()-1);
+        tabs--; 
     
         tokenizer.advance(); // '}'
     
@@ -518,7 +541,7 @@ public class CompilationEngine {
 
     private void compileReturn() {
 
-        print("compileReturn()\n");
+        print("Compiling return: return \n");
 
             
         // returnStatement:	'return' expression? ';'
@@ -527,9 +550,9 @@ public class CompilationEngine {
 
         // if next token isn't ';' there's an expression
         if (!(tokenizer.tokenType() == JackTokenizer.Type.SYMBOL && tokenizer.symbol() == ';')) {
-            tabs++; hasMoreBranches.add(true);
+            tabs++; 
             compileExpression();
-            tabs--; hasMoreBranches.remove(hasMoreBranches.size()-1);
+            tabs--; 
         } else {
             // void return = 0
             vmw.writePush("constant", 0);
@@ -544,7 +567,7 @@ public class CompilationEngine {
 
     private void compileIf() {
 
-        print("compileIf()\n");
+        print("Compiling if: if\n");
 
 
         // ifStatement:  'if' '(' expression ')' '{' statements '}'
@@ -556,9 +579,9 @@ public class CompilationEngine {
 
         tokenizer.advance(); // '('
         
-        tabs++; hasMoreBranches.add(true);
+        tabs++; 
         compileExpression(); // expression
-        tabs--; hasMoreBranches.remove(hasMoreBranches.size()-1);
+        tabs--; 
     
         tokenizer.advance(); // ')'
     
@@ -568,9 +591,9 @@ public class CompilationEngine {
     
         tokenizer.advance(); // '{'
         
-        tabs++; hasMoreBranches.add(true);
+        tabs++; 
         compileStatements();
-        tabs--; hasMoreBranches.remove(hasMoreBranches.size()-1);
+        tabs--; 
 
         tokenizer.advance(); // '}'
     
@@ -581,9 +604,9 @@ public class CompilationEngine {
         if (tokenizer.tokenType() == JackTokenizer.Type.KEYWORD && tokenizer.keyWord().equals("else")) {
             tokenizer.advance(); // 'else'
             tokenizer.advance(); // '{'
-            tabs++; hasMoreBranches.add(true);
+            tabs++; 
             compileStatements();
-            tabs--; hasMoreBranches.remove(hasMoreBranches.size()-1);
+            tabs--; 
             tokenizer.advance(); // '}'
         }
     
@@ -594,14 +617,14 @@ public class CompilationEngine {
 
     private void compileExpression() {
 
-        print("compileExpression()\n");
+        print("Compiling expression: \n");
 
 
         // expression:	term (op term)*
 
-        tabs++; hasMoreBranches.add(true);
+        tabs++; 
         compileTerm(); // term
-        tabs--; hasMoreBranches.remove(hasMoreBranches.size()-1);
+        tabs--; 
     
         // while the current token is an operator
         while (tokenizer.tokenType() == JackTokenizer.Type.SYMBOL && isValidSymbol(tokenizer.symbol())) {
@@ -609,9 +632,9 @@ public class CompilationEngine {
             char operator = tokenizer.symbol();
             tokenizer.advance(); // operator
             
-            tabs++; hasMoreBranches.add(true);
+            tabs++; 
             compileTerm();
-            tabs--; hasMoreBranches.remove(hasMoreBranches.size()-1);
+            tabs--; 
     
             switch (operator) {
                 case '+' -> vmw.writeArithmetic("add");
@@ -654,16 +677,19 @@ public class CompilationEngine {
         //			varName | varName '[' expression ']' | subroutineCall |
         //			'(' expression ')' | unaryOp term
 
-        print("compileTerm()\n");
+        print("Compiling term: ");
 
         if (tokenizer.tokenType() == JackTokenizer.Type.INT_CONSTANT) { // integerConstant | DONE
             vmw.writePush("constant", tokenizer.intVal());
+            System.out.println(tokenizer.intVal());
             tokenizer.advance();
 
         } else if (tokenizer.tokenType() == JackTokenizer.Type.STRING_CONSTANT) { // stringConstant | DONE
 
             vmw.writePush("constant", tokenizer.stringVal().length());
             vmw.writeCall("String.new", 1);
+
+            System.out.println("\"" + tokenizer.stringVal() + "\"");
 
             for(char c : tokenizer.stringVal().toCharArray()){
                 vmw.writePush("constant", (int) c);
@@ -679,49 +705,60 @@ public class CompilationEngine {
                 case "false", "null" -> vmw.writePush("constant", 0);
                 case "this" -> vmw.writePush("pointer", 0);
             }
+
+            System.out.println(tokenizer.keyWord());
             tokenizer.advance();
 
         } else if (tokenizer.tokenType() == JackTokenizer.Type.SYMBOL && tokenizer.symbol() == '-') { // unaryOp negative | DONE
+            System.out.println();
             tokenizer.advance(); // -
-            tabs++; hasMoreBranches.add(true);
+            tabs++; 
             compileTerm();
-            tabs--; hasMoreBranches.remove(hasMoreBranches.size()-1);
+            tabs--; 
             vmw.writeArithmetic("neg");
 
+
         } else if (tokenizer.tokenType() == JackTokenizer.Type.SYMBOL && tokenizer.symbol() == '~') { // unaryOp not | DONE
+            System.out.println();
             tokenizer.advance(); // ~
-            tabs++; hasMoreBranches.add(true);
+            tabs++; 
             compileTerm();
-            tabs--; hasMoreBranches.remove(hasMoreBranches.size()-1);
+            tabs--; 
             vmw.writeArithmetic("not");
+
         } 
         
         else if (tokenizer.tokenType() == JackTokenizer.Type.SYMBOL && tokenizer.symbol() == '(') { // (expression) | DONE
-            
+            System.out.println();
+
             tokenizer.advance(); // (
-            tabs++; hasMoreBranches.add(true);
+            tabs++; 
             compileExpression(); // expression
-            tabs--; hasMoreBranches.remove(hasMoreBranches.size()-1);
+            tabs--; 
             tokenizer.advance(); // )
 
         } else if (tokenizer.tokenType() == JackTokenizer.Type.IDENTIFIER) { // varName
             
             String varName = tokenizer.identifier();
+
+            System.out.print(varName);
             
             tokenizer.advance();
             
             if (tokenizer.tokenType() == JackTokenizer.Type.SYMBOL) {
                 switch (tokenizer.symbol()) {
                     case '[' -> { // varName[x]
+                        System.out.println("[]");
+
 
                         SymbolTable.VarKind kind = st.KindOf(varName);
                         int index = st.IndexOf(varName);
                         String segment = kindToSegment(kind);
 
                         tokenizer.advance(); // '['
-                        tabs++; hasMoreBranches.add(true);
+                        tabs++; 
                         compileExpression(); // expression
-                        tabs--; hasMoreBranches.remove(hasMoreBranches.size()-1);
+                        tabs--; 
                         tokenizer.advance(); // ']'
                         
                         vmw.writePush(segment, index);
@@ -731,21 +768,24 @@ public class CompilationEngine {
                     }
 
                     case '(' -> { // varName() 
+                        System.out.println("()");
+
                         tokenizer.advance(); // '('
                         vmw.writePush("pointer", 0);
-                        tabs++; hasMoreBranches.add(true);
+                        tabs++; 
                         int numArgs = 1 + compileExpressionList();
-                        tabs--; hasMoreBranches.remove(hasMoreBranches.size()-1);
+                        tabs--; 
                         tokenizer.advance(); // ')'
                         vmw.writeCall(className + "." + varName, numArgs);
                     }
 
                     case '.' -> {
+
                         tokenizer.advance(); // '.'
                         String methodName = tokenizer.identifier();
                         tokenizer.advance(); // methodName
 
-                        print("methodName: " + methodName);
+                        System.out.println("." + methodName + "()");
                         tokenizer.advance(); // '('
                     
                         // varName = variable | class
@@ -761,9 +801,9 @@ public class CompilationEngine {
                             varName = st.TypeOf(varName);
                         }
                         
-                        tabs++; hasMoreBranches.add(true);
+                        tabs++; 
                         numArgs += compileExpressionList();
-                        tabs--; hasMoreBranches.remove(hasMoreBranches.size()-1);
+                        tabs--; 
                     
                         tokenizer.advance(); // ')'
 
@@ -772,6 +812,8 @@ public class CompilationEngine {
                     
                     
                     default -> { // just varName
+                        System.out.println();
+
 
                         SymbolTable.VarKind kind = st.KindOf(varName);
                         int index = st.IndexOf(varName);
@@ -781,32 +823,35 @@ public class CompilationEngine {
                     }
                 }
             } else {
+                System.out.println();
+
                 SymbolTable.VarKind kind = st.KindOf(varName);
                 int index = st.IndexOf(varName);
                 String segment = kindToSegment(kind);
                 vmw.writePush(segment, index);
             }
         }
+
     }
 
     private int compileExpressionList() {
 
-        print("compileExpressionList()\n");
+        print("Compiling expression list: \n");
 
         int count = 0;
 
         // check for empty expression list
         if (!(tokenizer.tokenType() == JackTokenizer.Type.SYMBOL && tokenizer.symbol() == ')')) {
-            tabs++; hasMoreBranches.add(true);
+            tabs++; 
             compileExpression();
-            tabs--; hasMoreBranches.remove(hasMoreBranches.size()-1);
+            tabs--; 
             count++;
 
             while (tokenizer.tokenType() == JackTokenizer.Type.SYMBOL && tokenizer.symbol() == ',') {
                 tokenizer.advance();
-                tabs++; hasMoreBranches.add(true);
+                tabs++; 
                 compileExpression();
-                tabs--; hasMoreBranches.remove(hasMoreBranches.size()-1);
+                tabs--; 
                 count++;
             }
         }

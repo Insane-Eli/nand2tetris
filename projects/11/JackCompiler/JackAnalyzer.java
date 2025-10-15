@@ -70,7 +70,7 @@ class JackAnalyzer {
      */
     private static void processTokenizer(String sourceFileName, String outputFileName) {
         try {
-            System.out.print("Creating new CompilationEngine() for " + shortOutputFileName + "... ");
+            System.out.print("Creating new CompilationEngine for " + shortOutputFileName + "... ");
             CompilationEngine engine = new CompilationEngine(sourceFileName, outputFileName);        
         } catch (Exception e) {
             System.out.println("JackAnalyzer.processTokenizer() error: " + e);

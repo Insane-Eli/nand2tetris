@@ -69,7 +69,7 @@ public class JackTokenizer {
      */
     public JackTokenizer(FileReader inputFile) {
 
-        System.out.println("DONE");
+        System.out.println("DONE!");
 
         input = "";
         cursor = 0;
