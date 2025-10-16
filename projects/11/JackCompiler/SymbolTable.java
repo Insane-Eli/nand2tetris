@@ -14,9 +14,11 @@ public class SymbolTable {
     private Hashtable<String, VarData> subroutineVars;
 
     private class VarData{
-        private String type;
-        private VarKind kind;
-        private int index;
+
+        private final String type;
+        private final VarKind kind;
+        private final int index;
+        
         private VarData(String type, VarKind kind, int index){
             this.type = type;
             this.kind = kind;
