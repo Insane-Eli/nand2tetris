@@ -10,24 +10,24 @@ public class SymbolTable {
         NONE
     }
 
-    public Hashtable<String, VarData> classVars;
-    public Hashtable<String, VarData> subroutineVars;
+    private Hashtable<String, VarData> classVars;
+    private Hashtable<String, VarData> subroutineVars;
 
-    public class VarData{
-        public String type;
-        public VarKind kind;
-        public int index;
-        public VarData(String type, VarKind kind, int index){
+    private class VarData{
+        private String type;
+        private VarKind kind;
+        private int index;
+        private VarData(String type, VarKind kind, int index){
             this.type = type;
             this.kind = kind;
             this.index = index;
         }
     }
 
-    public int staticCount;
-    public int fieldCount;
-    public int argCount;
-    public int varCount;
+    private int staticCount;
+    private int fieldCount;
+    private int argCount;
+    private int varCount;
 
     public SymbolTable(){ // Creates a new empty symbol table.
 
@@ -91,8 +91,6 @@ public class SymbolTable {
         } else if (classVars.containsKey(name)){
             return classVars.get(name).kind;
         } else {
-            System.out.println("\nBad Kind");
-            errorReport(name);
             return VarKind.NONE;
         }
     }
@@ -103,8 +101,6 @@ public class SymbolTable {
         } else if (classVars.containsKey(name)){
             return classVars.get(name).type;
         } else  {
-            System.out.println("\nBad Type");
-            errorReport(name);
             return "";
         }
     }
@@ -115,18 +111,7 @@ public class SymbolTable {
         } else if (classVars.containsKey(name)){
             return classVars.get(name).index;
         } else {
-            System.out.println("\nBad Index");
-            errorReport(name); // lets just turn this off for now
             return -1;
         }
-    }
-
-    private void errorReport(String name){
-        System.out.println(
-        "Error: " + name + "\n" +
-        "staticCount: " + staticCount + "\n" +
-        "fieldCount: " + fieldCount + "\n" +
-        "argCount: " + argCount + "\n" +
-        "varCount: " + varCount);
     }
 }
